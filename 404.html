@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กำลังนำทาง... - DMS Cloud Risk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    // สั่ง Redirect กลับหน้า Auth.html ทันที
+    setTimeout(function() {
+      window.location.href = "Auth.html";
+    }, 1500);
+  </script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-4 font-['Noto_Sans_Thai']">
+  <div class="text-center bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl max-w-md w-full">
+    <i class="fa-solid fa-circle-notch fa-spin text-5xl text-blue-500 mb-4"></i>
+    <h1 class="text-xl font-bold mb-2">ไม่พบหน้าที่ท่านต้องการ (404)</h1>
+    <p class="text-slate-400 text-sm mb-4">กำลังนำท่านกลับไปยังหน้าเข้าสู่ระบบ...</p>
+    <a href="Auth.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-4 rounded-lg transition">
+      คลิกที่นี่หากระบบไม่นำทางอัตโนมัติ
+    </a>
+  </div>
+</body>
+</html>
