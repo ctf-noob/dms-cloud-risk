@@ -1,9 +1,56 @@
-function doGet() {
-  return HtmlService.createTemplateFromFile('Auth')
-    .evaluate()
-    .setTitle('ระบบประเมินความเสี่ยงคลาวด์')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+// 1. ฟังก์ชันรองรับการเช็กสถานะการเชื่อมต่อ (GET)
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({ status: "API Online", timestamp: new Date() }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
+
+// 2. ฟังก์ชันหลักสำหรับรับคำสั่งจาก GitHub Pages (POST)
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    const payload = data.payload || {};
+    let result = {};
+
+    // Router: สั่งงานตาม action ที่ส่งมาจาก GitHub Pages
+    switch (action) {
+      case "getAgencies":
+        result = getAgencies();
+        break;
+      case "getAllRiskCloudData":
+        result = getAllRiskCloudData();
+        break;
+      case "saveAssessmentData":
+        result = saveAssessmentData(payload);
+        break;
+      case "registerUser":
+        result = registerUser(payload.agency, payload.email, payload.phone, payload.fullname);
+        break;
+      case "verifyUser":
+        result = verifyUser(payload.agency, payload.email, payload.phone);
+        break;
+      case "verifyOTP":
+        result = verifyOTP(payload.email, payload.userOtp);
+        break;
+      case "getIndexPage":
+        result = getIndexPage();
+        break;
+      default:
+        result = { success: false, message: "Unrecognized Action: " + action };
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: true, data: result }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ==========================================
+// ฟังก์ชันเดิมของคุณคงไว้ทั้งหมด (ไม่ต้องแก้ไข)
+// ==========================================
 
 function getIndexPage() {
   try {
@@ -56,7 +103,6 @@ function getAllRiskCloudData() {
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       if(row[1]) {
-        // เช็กว่ามีการบันทึก Contact หรือ Note หรือยัง เพื่อบอกสถานะว่าประเมินแล้ว
         const hasSaved = (row[8] && row[8].toString().trim() !== "") || (row[10] && row[10].toString().trim() !== "");
 
         assets.push({
@@ -100,7 +146,6 @@ function saveAssessmentData(payload) {
     }
 
     const data = sheet.getDataRange().getValues();
-    const timestamp = new Date();
     const updates = {};
     
     payload.assets.forEach(asset => {

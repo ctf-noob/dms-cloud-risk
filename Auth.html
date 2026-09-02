@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เข้าสู่ระบบ</title>
+  <title>เข้าสู่ระบบ - DMS Cloud Risk</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,8 +12,6 @@
     body { 
       font-family: 'Noto Sans Thai', sans-serif; 
       background-image: url('https://www.ncsa.or.th/media/uploads/2024/11/27/commercial-cyber-claims-webinar-2023-stage_uid_6746e511b9378.webp');
-      //background-image: url('https://drive.google.com/file/d/17xtFRSNr8BoH3Mne-_V8ItLSuBCo2jAE/view?usp=sharing');
-      //background-image: url('https://drive.google.com/uc?export=view&id=17xtFRSNr8BoH3Mne-_V8ItLSuBCo2jAE');
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -30,16 +28,12 @@
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen relative" id="mainBody">
 
-  <!-- แผ่นกรองสีดำ -->
   <div class="absolute inset-0 bg-black/50 z-0"></div>
 
-  <!-- กรอบหลัก -->
   <div id="authContainer" class="glass-panel w-full max-w-md rounded-2xl overflow-hidden relative z-10 m-4 border-t-8 border-[#122e5a]">
     
-    <!-- ส่วนหัว -->
     <div class="pt-8 pb-5 px-6 flex items-center gap-5 border-b border-gray-200/60 mb-4">
-      <img src="https://dmb.dms.go.th/wp-content/uploads/2024/11/ico_logo@2x.png" alt="Logo" class="w-20 h-20 object-contain flex-shrink-0 ">
-      <!--<img src="https://drive.google.com/uc?export=view&id=1n65sO4YOCMCjwPB36biX5pnjSWVoNEti" alt="Logo" class="w-20 h-20 object-contain flex-shrink-0 ">-->
+      <img src="https://dmb.dms.go.th/wp-content/uploads/2024/11/ico_logo@2x.png" alt="Logo" class="w-20 h-20 object-contain flex-shrink-0">
       <div class="flex flex-col border-l-2 border-[#122e5a]/20 pl-5 py-1.5">
         <h1 class="text-[16px] font-bold text-[#122e5a] leading-snug">DMS Cloud Risk & Asset Management</h1>
         <p class="text-[13px] text-gray-500 font-medium mt-1">สำนักดิจิทัลการแพทย์ กรมการแพทย์</p>
@@ -48,7 +42,6 @@
 
     <div class="px-8 pb-8 pt-3">
       
-      <!-- FORM 1: LOGIN -->
       <form id="loginForm" onsubmit="requestOTP(event)">
         <div class="mb-4">
           <label class="block text-xs font-semibold text-gray-700 mb-1">หน่วยงาน / สังกัด <span class="text-red-500">*</span></label>
@@ -89,7 +82,6 @@
         </div>
       </form>
 
-      <!-- FORM 2: REGISTER (สมัครสมาชิก) -->
       <form id="registerForm" class="hidden" onsubmit="submitRegister(event)">
         <h2 class="text-lg font-bold text-gray-800 mb-4 text-center"><i class="fa-solid fa-user-plus text-[#122e5a] mr-2"></i> สมัครบัญชีผู้ใช้งาน</h2>
         
@@ -129,7 +121,6 @@
         </div>
       </form>
 
-      <!-- FORM 3: OTP VERIFICATION -->
       <form id="otpForm" class="hidden text-center" onsubmit="submitOTP(event)">
         <div class="mb-5 mt-2">
           <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3 text-[#122e5a] text-xl">
@@ -158,12 +149,12 @@
       </form>
     </div>
   </div>
-    <!-- Footer ลิขสิทธิ์ (แบ่งซ้าย-ขวา) -->
+
   <div class="absolute bottom-4 left-0 w-full px-6 md:px-12 flex justify-between items-center text-white/80 text-[11px] font-light tracking-wide z-10 drop-shadow-md">
     <span>Copyright © สำนักดิจิทัลการแพทย์</span>
     <span>Version 1.0.1</span>
   </div>
-  <!-- POPUP: ติดต่อเจ้าหน้าที่ -->
+
   <div id="staffPopup" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity">
     <div class="bg-white rounded-xl p-6 w-10/12 max-w-sm text-center shadow-2xl relative">
       <button onclick="hideStaffPopup()" class="absolute top-3 right-4 text-gray-400 hover:text-gray-600">
@@ -188,51 +179,55 @@
   </div>
 
   <script>
+    // 🔴 1. ใส่ Web App URL ของ Google Apps Script ที่ Deploy ไว้แล้วตรงนี้
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzrqDibi-z2ejZbLG76WU8Ga3-qdQDILykwgmF7BMxscFF6Sx1_Odw8sx4sKr_cUHVh/exec";
+
     let sessionUser = { agency: "", email: "", phone: "", fullname: "" };
     let countdownInterval;
 
-    document.addEventListener("DOMContentLoaded", function() {
-      // โหลด Dropdown หน่วยงาน ลงในฟอร์ม Login และ Register
-      google.script.run
-        .withSuccessHandler(function(agencies) {
-          const selectLogin = document.getElementById('agency');
-          const selectReg = document.getElementById('regAgency');
-          selectLogin.innerHTML = '<option value="" disabled selected>-- เลือกหน่วยงาน --</option>';
-          selectReg.innerHTML = '<option value="" disabled selected>-- เลือกหน่วยงาน --</option>';
-          agencies.forEach(name => {
-            selectLogin.innerHTML += `<option value="${name}">${name}</option>`;
-            selectReg.innerHTML += `<option value="${name}">${name}</option>`;
-          });
-        })
-        .withFailureHandler(function() {
-          document.getElementById('agency').innerHTML = '<option value="" disabled selected>-- โหลดข้อมูลผิดพลาด --</option>';
-        })
-        .getAgencies();
+    // ฟังก์ชันสำหรับเรียก API สื่อสารกับ Apps Script (แทน google.script.run)
+    async function callBackend(action, payload = {}) {
+      try {
+        const response = await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: action, payload: payload })
+        });
+        const res = await response.json();
+        return res.success ? res.data : { success: false, message: res.message || "เกิดข้อผิดพลาด" };
+      } catch (err) {
+        return { success: false, message: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + err.toString() };
+      }
+    }
 
-      // เช็ก Session การล็อกอิน
+    document.addEventListener("DOMContentLoaded", async function() {
+      // 2. โหลดรายชื่อหน่วยงาน
+      const agencies = await callBackend("getAgencies");
+      const selectLogin = document.getElementById('agency');
+      const selectReg = document.getElementById('regAgency');
+      
+      if (Array.isArray(agencies) && agencies.length > 0) {
+        selectLogin.innerHTML = '<option value="" disabled selected>-- เลือกหน่วยงาน --</option>';
+        selectReg.innerHTML = '<option value="" disabled selected>-- เลือกหน่วยงาน --</option>';
+        agencies.forEach(name => {
+          selectLogin.innerHTML += `<option value="${name}">${name}</option>`;
+          selectReg.innerHTML += `<option value="${name}">${name}</option>`;
+        });
+      } else {
+        selectLogin.innerHTML = '<option value="" disabled selected>-- โหลดข้อมูลผิดพลาด --</option>';
+      }
+
+      // 3. ตรวจสอบ Session หากล็อกอินอยู่แล้ว ให้เปลี่ยนหน้าไปยัง Index.html บน GitHub Pages
       const savedAgency = sessionStorage.getItem('mfa_agency');
       const savedName = sessionStorage.getItem('mfa_name');
       if (savedAgency && savedName) {
-          document.body.innerHTML = `
-    <!-- Loading Screen -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-slate-50/90 z-50 flex flex-col items-center justify-center transition-opacity">
-        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-[#122e5a] mb-4"></i>
-        <h2 class="text-lg font-bold text-slate-800">กำลังดึงข้อมูลระบบจากคลาวด์...</h2>
-    </div>
-
-          `;
-          google.script.run.withSuccessHandler(function(htmlOutput) {
-              document.open();
-              document.write(htmlOutput);
-              document.close();
-          }).getIndexPage();
+        window.location.href = "Index.html";
       }
     });
 
     function showStaffPopup() { document.getElementById('staffPopup').classList.remove('hidden'); }
     function hideStaffPopup() { document.getElementById('staffPopup').classList.add('hidden'); }
 
-    // สลับหน้าฟอร์ม
     function toggleForm(formId) {
       document.getElementById('loginForm').classList.add('hidden');
       document.getElementById('registerForm').classList.add('hidden');
@@ -243,8 +238,8 @@
       document.getElementById('regSuccess').classList.add('hidden');
     }
 
-    // ส่งฟอร์มสมัครสมาชิก
-    function submitRegister(e) {
+    // 4. สมัครสมาชิก
+    async function submitRegister(e) {
       e.preventDefault();
       const agency = document.getElementById('regAgency').value;
       const name = document.getElementById('regName').value.trim();
@@ -263,23 +258,22 @@
       btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> กำลังส่งข้อมูล...';
       btn.disabled = true; err.classList.add('hidden'); succ.classList.add('hidden');
 
-      google.script.run.withSuccessHandler(function(res) {
-        btn.innerHTML = 'ลงทะเบียนบัญชี'; btn.disabled = false;
-        if(res.success) {
-          succ.innerText = res.message; succ.classList.remove('hidden');
-          // เคลียร์ฟอร์ม
-          document.getElementById('regName').value = '';
-          document.getElementById('regEmail').value = '';
-          document.getElementById('regPhone').value = '';
-          document.getElementById('regAgency').value = '';
-        } else {
-          err.innerText = res.message; err.classList.remove('hidden');
-        }
-      }).registerUser(agency, email, phone, name);
+      const res = await callBackend("registerUser", { agency, email, phone, fullname: name });
+      
+      btn.innerHTML = 'ลงทะเบียนบัญชี'; btn.disabled = false;
+      if (res.success) {
+        succ.innerText = res.message; succ.classList.remove('hidden');
+        document.getElementById('regName').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regPhone').value = '';
+        document.getElementById('regAgency').value = '';
+      } else {
+        err.innerText = res.message; err.classList.remove('hidden');
+      }
     }
 
-    // ส่งฟอร์มขอ OTP (ล็อกอิน)
-    function requestOTP(e) {
+    // 5. ขอรหัส OTP
+    async function requestOTP(e) {
       e.preventDefault();
       sessionUser.agency = document.getElementById('agency').value;
       sessionUser.email = document.getElementById('email').value.trim();
@@ -296,18 +290,18 @@
       btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> กำลังตรวจสอบ...'; 
       btn.disabled = true; err.classList.add('hidden');
 
-      google.script.run.withSuccessHandler(function(res) {
-        if(res.success) {
-          sessionUser.fullname = res.fullname;
-          document.getElementById('displayEmail').innerText = sessionUser.email;
-          toggleForm('otpForm');
-          startCountdown();
-        } else {
-          err.innerText = res.message; err.classList.remove('hidden');
-          if (res.locked || res.inactive) showStaffPopup(); // แสดงป๊อปอัปให้ติดต่อแอดมิน
-        }
-        btn.innerHTML = '<span>ขอรหัส OTP</span> <i class="fa-solid fa-paper-plane ml-2"></i>'; btn.disabled = false;
-      }).verifyUser(sessionUser.agency, sessionUser.email, sessionUser.phone);
+      const res = await callBackend("verifyUser", { agency: sessionUser.agency, email: sessionUser.email, phone: sessionUser.phone });
+
+      if (res.success) {
+        sessionUser.fullname = res.fullname;
+        document.getElementById('displayEmail').innerText = sessionUser.email;
+        toggleForm('otpForm');
+        startCountdown();
+      } else {
+        err.innerText = res.message; err.classList.remove('hidden');
+        if (res.locked || res.inactive) showStaffPopup();
+      }
+      btn.innerHTML = '<span>ขอรหัส OTP</span> <i class="fa-solid fa-paper-plane ml-2"></i>'; btn.disabled = false;
     }
 
     function startCountdown() {
@@ -323,9 +317,10 @@
       }, 1000);
     }
 
-    function resendOTP() {
+    async function resendOTP() {
       document.getElementById('otpError').classList.add('hidden');
-      google.script.run.withSuccessHandler(() => startCountdown()).generateAndSaveOTP(sessionUser.email, sessionUser.fullname);
+      await callBackend("generateAndSaveOTP", { email: sessionUser.email, fullname: sessionUser.fullname });
+      startCountdown();
     }
 
     function backToLogin() {
@@ -333,29 +328,31 @@
       toggleForm('loginForm');
     }
 
-    function submitOTP(e) {
+    // 6. ยืนยัน OTP และนำทางไปหน้าหลัก
+    async function submitOTP(e) {
       e.preventDefault();
       const otpCode = document.getElementById('otpCode').value.trim();
       const btn = document.getElementById('btnVerify');
       const err = document.getElementById('otpError');
       btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> กำลังตรวจสอบ...'; btn.disabled = true; err.classList.add('hidden');
 
-      google.script.run.withSuccessHandler(function(res) {
-        if(res.success) {
-          sessionStorage.setItem('mfa_agency', sessionUser.agency);
-          sessionStorage.setItem('mfa_email', sessionUser.email);
-          sessionStorage.setItem('mfa_name', sessionUser.fullname);
-          
-          document.getElementById('authContainer').innerHTML = '<div class="p-12 text-center"><i class="fa-solid fa-circle-notch fa-spin text-5xl text-[#122e5a] mb-5"></i><h2 class="text-xl font-bold text-gray-800">ยืนยันตัวตนสำเร็จ</h2><p class="text-sm text-gray-600 mt-2">กำลังเตรียมระบบ...</p></div>';
-          
-          google.script.run.withSuccessHandler(function(html) {
-            document.open(); document.write(html); document.close();
-          }).getIndexPage();
-        } else {
-          err.innerText = res.message; err.classList.remove('hidden');
-          btn.innerHTML = 'ยืนยันเข้าสู่ระบบ'; btn.disabled = false;
-        }
-      }).verifyOTP(sessionUser.email, otpCode);
+      const res = await callBackend("verifyOTP", { email: sessionUser.email, userOtp: otpCode });
+
+      if (res.success) {
+        sessionStorage.setItem('mfa_agency', sessionUser.agency);
+        sessionStorage.setItem('mfa_email', sessionUser.email);
+        sessionStorage.setItem('mfa_name', sessionUser.fullname);
+        
+        document.getElementById('authContainer').innerHTML = '<div class="p-12 text-center"><i class="fa-solid fa-circle-notch fa-spin text-5xl text-[#122e5a] mb-5"></i><h2 class="text-xl font-bold text-gray-800">ยืนยันตัวตนสำเร็จ</h2><p class="text-sm text-gray-600 mt-2">กำลังเข้าสู่ระบบประเมินความเสี่ยง...</p></div>';
+        
+        // สลับไปหน้า Index.html บน GitHub Pages
+        setTimeout(() => {
+          window.location.href = "Index.html";
+        }, 800);
+      } else {
+        err.innerText = res.message; err.classList.remove('hidden');
+        btn.innerHTML = 'ยืนยันเข้าสู่ระบบ'; btn.disabled = false;
+      }
     }
   </script>
 </body>

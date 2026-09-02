@@ -18,7 +18,6 @@
         .th-sortable:hover { background-color: #334155; }
     </style>
 </head>
-<!-- <br><span class="text-[9px] text-emerald-300">(แก้ไขได้)-->
 <body class="relative min-h-screen pb-10">
 
     <div id="loadingOverlay" class="fixed inset-0 bg-slate-50/90 z-50 flex flex-col items-center justify-center transition-opacity duration-300">
@@ -38,6 +37,10 @@
             <div class="flex items-center"><i class="fa-solid fa-user text-sm mr-2"></i><span id="profileName" class="text-sm font-medium">ผู้ใช้งาน</span></div>
             <span class="text-slate-400">|</span>
             <div class="flex items-center"><i class="fa-solid fa-building text-sm mr-2"></i><span id="displayAgency" class="text-sm font-medium">หน่วยงาน</span></div>
+            <span class="text-slate-400">|</span>
+            <button onclick="logout()" class="flex items-center text-sm font-medium text-rose-300 hover:text-rose-100 transition">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> ออกจากระบบ
+            </button>
         </div>
     </div>
 
@@ -168,7 +171,7 @@
                                     โครงการ <i class="fa-solid fa-sort ml-1 text-slate-400"></i>
                                 </th>
                                 <th rowspan="2" onclick="sortTable('name')" class="py-3 px-3 min-w-[160px] th-sortable border-r border-slate-700">
-                                    ระบบงาน </span> <i class="fa-solid fa-sort ml-1 text-slate-400"></i>
+                                    ระบบงาน <i class="fa-solid fa-sort ml-1 text-slate-400"></i>
                                 </th>
                                 <th rowspan="2" class="py-3 px-3 min-w-[170px] border-r border-slate-700">ประเภทระบบ</th>
                                 
@@ -192,7 +195,7 @@
                                         <i class="fa-solid fa-sort text-slate-400 text-xs shrink-0"></i>
                                     </div>
                                 </th>
-                                <th rowspan="2" class="py-3 px-3 min-w-[130px]">หมายเหตุ</span></th>
+                                <th rowspan="2" class="py-3 px-3 min-w-[130px]">หมายเหตุ</th>
                             </tr>
                             <tr class="bg-slate-700 text-slate-200">
                                 <th class="py-2.5 px-3 min-w-[160px] border-r border-slate-600 text-center font-normal">
@@ -316,7 +319,7 @@
                                         <i class="fa-solid fa-sort text-slate-400 text-xs shrink-0"></i>
                                     </div>
                                 </th>
-                                <th rowspan="2" class="py-3 px-3 min-w-[130px]">หมายเหตุ <br></th>
+                                <th rowspan="2" class="py-3 px-3 min-w-[130px]">หมายเหตุ</th>
                             </tr>
                             <tr class="bg-slate-700 text-slate-200">
                                 <th class="py-2.5 px-3 min-w-[160px] border-r border-slate-600 text-center font-normal">
@@ -467,6 +470,9 @@
     </div>
 
     <script>
+        // 🔴 1. วาง URL ของ Google Apps Script ที่ Deploy ไว้ตรงนี้
+        const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzrqDibi-z2ejZbLG76WU8Ga3-qdQDILykwgmF7BMxscFF6Sx1_Odw8sx4sKr_cUHVh/exec";
+
         let allAssets = [];
         let userAgency = "";
         let userName = "";
@@ -480,6 +486,21 @@
         let summaryDataList = [];
         let filteredSummaryDataList = [];
         let summarySortDirection = {};
+
+        // ฟังก์ชันสำหรับยิง API หา Apps Script
+        async function callBackend(action, payload = {}) {
+            try {
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: action, payload: payload })
+                });
+                const res = await response.json();
+                return res.success ? res.data : { success: false, message: res.message || "เกิดข้อผิดพลาด" };
+            } catch (err) {
+                return { success: false, message: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + err.toString() };
+            }
+        }
 
         const modalInfoData = {
             pdpa: {
@@ -553,36 +574,48 @@
         function closeModal() { document.getElementById('infoModal').classList.add('hidden'); }
 
         document.addEventListener("DOMContentLoaded", function() {
-            userAgency = sessionStorage.getItem('mfa_agency') || "ไม่ทราบหน่วยงาน";
-            userName = sessionStorage.getItem('mfa_name') || "ผู้ใช้งานระบบ";
+            userAgency = sessionStorage.getItem('mfa_agency');
+            userName = sessionStorage.getItem('mfa_name');
             
+            // เช็กว่าล็อกอินหรือยัง ถ้ายังให้เตะกลับหน้า Auth.html
+            if (!userAgency || !userName) {
+                window.location.href = "Auth.html";
+                return;
+            }
+
             document.getElementById('displayAgency').innerText = userAgency;
             document.getElementById('profileName').innerText = userName;
 
             loadDataFromCloud();
         });
 
-        // 🔴 โหลดข้อมูลเสร็จแล้วสั่งโชว์ Popup แบบบังคับทุกครั้ง
-        function loadDataFromCloud() {
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = "Auth.html";
+        }
+
+        // 2. ปรับการดึงข้อมูล Cloud ผ่าน fetch
+        async function loadDataFromCloud() {
             document.getElementById('loadingOverlay').classList.remove('hidden');
             document.getElementById('loadingOverlay').classList.remove('opacity-0');
             
-            google.script.run.withSuccessHandler(function(response) {
+            const response = await callBackend("getAllRiskCloudData");
+            if (Array.isArray(response)) {
                 allAssets = response.filter(item => item.agency === userAgency);
                 renderMainTable();
                 updateCardDashboard();
                 applyFilterAndPagination(true);
-                
-                document.getElementById('loadingOverlay').classList.add('opacity-0');
-                setTimeout(() => { 
-                    document.getElementById('loadingOverlay').classList.add('hidden'); 
-                    // ถอดเงื่อนไขทิ้ง สั่งให้แสดงขึ้นมาทุกครั้งทันทีที่โหลดข้อมูลเสร็จ
-                    document.getElementById('announcementPopup').classList.remove('hidden');
-                }, 300);
-            }).getAllRiskCloudData();
+            } else {
+                alert("เกิดข้อผิดพลาดในการโหลดข้อมูล: " + (response.message || "ไม่พบข้อมูล"));
+            }
+
+            document.getElementById('loadingOverlay').classList.add('opacity-0');
+            setTimeout(() => { 
+                document.getElementById('loadingOverlay').classList.add('hidden'); 
+                document.getElementById('announcementPopup').classList.remove('hidden');
+            }, 300);
         }
 
-        // ปิด Popup
         function closeAnnouncement() {
             document.getElementById('announcementPopup').classList.add('hidden');
         }
@@ -1044,7 +1077,8 @@
             XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        function submitToDatabase() {
+        // 3. ปรับการบันทึกข้อมูลผ่าน fetch
+        async function submitToDatabase() {
             const payloadData = [];
             document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
                 const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
@@ -1073,15 +1107,15 @@
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
             btn.disabled = true;
 
-            google.script.run.withSuccessHandler(function(res) {
-                if(res.success) {
-                    document.getElementById('successPopup').classList.remove('hidden');
-                } else {
-                    alert("เกิดข้อผิดพลาด: " + res.message);
-                    btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
-                    btn.disabled = false;
-                }
-            }).saveAssessmentData({ agency: userAgency, assessor: userName, assets: payloadData });
+            const res = await callBackend("saveAssessmentData", { agency: userAgency, assessor: userName, assets: payloadData });
+
+            if(res.success) {
+                document.getElementById('successPopup').classList.remove('hidden');
+            } else {
+                alert("เกิดข้อผิดพลาด: " + res.message);
+                btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
