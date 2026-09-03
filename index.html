@@ -621,44 +621,70 @@
         }
 
         function updateCardDashboard() {
-            const total = allAssets.length;
-            const totalDomain = allAssets.filter(item => item.typeFilter && item.typeFilter.toLowerCase() === 'domain').length;
-            const totalServer = allAssets.filter(item => item.typeFilter && item.typeFilter.toLowerCase() !== 'domain').length;
+    // 1. ดึงจำนวนระบบทั้งหมดของหน่วยงานจากข้อมูลหลัก
+    const total = allAssets.length;
+    const totalDomain = allAssets.filter(item => item.typeFilter && item.typeFilter.toLowerCase() === 'domain').length;
+    const totalServer = allAssets.filter(item => item.typeFilter && item.typeFilter.toLowerCase() !== 'domain').length;
 
-            let activeCount = 0;
-            let assessedCount = 0;
-            let pdpaCount = 0;
+    let activeCount = 0;
+    let assessedCount = 0;
+    let pdpaCount = 0;
 
-            const allRows = document.querySelectorAll('#mainTableBody tr.asset-row');
-            allRows.forEach(row => {
-                const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-                if (isActive) {
-                    activeCount++;
-                    if (row.querySelector('.pdpa-cb') && row.querySelector('.pdpa-cb').checked) pdpaCount++;
-
-                    const id = row.getAttribute('data-id');
-                    const assetData = allAssets.find(a => a.id.toString() === id.toString());
-                    if (assetData && assetData.isSaved) assessedCount++;
-                }
-            });
-
-            const inactiveCount = total - activeCount;
-            const pendingCount = activeCount - assessedCount;
-
-            document.getElementById('cardTotal').innerText = total;
-            document.getElementById('cardTotalDomain').innerHTML = `<i class="fa-solid fa-globe text-blue-400 mr-1"></i> Domain: ${totalDomain}`;
-            document.getElementById('cardTotalServer').innerHTML = `<i class="fa-solid fa-server text-indigo-400 mr-1"></i> Server: ${totalServer}`;
-            
-            document.getElementById('cardActive').innerText = activeCount;
-            document.getElementById('cardActiveSub').innerText = activeCount;
-            document.getElementById('cardInactive').innerText = inactiveCount;
-
-            document.getElementById('cardAssessed').innerText = assessedCount;
-            document.getElementById('cardAssessedSub').innerText = assessedCount;
-            document.getElementById('cardPending').innerText = pendingCount < 0 ? 0 : pendingCount;
-
-            document.getElementById('cardPdpa').innerText = pdpaCount;
+    // 2. ดึงสถานะการกด Checkbox จากตารางทั้งหมด (รวมทุกหน้า Pagination)
+    const allRows = document.querySelectorAll('#mainTableBody tr.asset-row');
+    
+    // สร้าง Map เพื่อจำค่าจาก DOM หน้าที่กำลังแสดงผลอยู่
+    const domActiveState = {};
+    const domPdpaState = {};
+    allRows.forEach(row => {
+        const id = row.getAttribute('data-id');
+        if (id) {
+            domActiveState[id] = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
+            domPdpaState[id] = row.querySelector('.pdpa-cb') ? row.querySelector('.pdpa-cb').checked : false;
         }
+    });
+
+    // 3. วนลูปคำนวณจากอาร์เรย์หลัก allAssets เพื่อให้ครอบคลุมทุกรายการ
+    allAssets.forEach(item => {
+        const idStr = item.id.toString();
+        
+        // เช็กว่ามีการเปลี่ยนค่าบนหน้าจอหรือไม่ ถ้าไม่มีให้ใช้ค่าเริ่มต้นจากฐานข้อมูล
+        let isActive = item.status === 'ยืนยันใช้งาน' || item.isSaved;
+        if (domActiveState.hasOwnProperty(idStr)) {
+            isActive = domActiveState[idStr];
+        }
+
+        let hasPdpa = item.pdpa;
+        if (domPdpaState.hasOwnProperty(idStr)) {
+            hasPdpa = domPdpaState[idStr];
+        }
+
+        if (isActive) {
+            activeCount++;
+            if (hasPdpa) pdpaCount++;
+            if (item.isSaved) assessedCount++;
+        }
+    });
+
+    // 4. คำนวณตัวเลข ไม่ใช้งาน และ รอประเมิน
+    const inactiveCount = total - activeCount;
+    const pendingCount = activeCount - assessedCount;
+
+    // 5. แสดงผลบน Cards
+    if (document.getElementById('cardTotal')) document.getElementById('cardTotal').innerText = total;
+    if (document.getElementById('cardTotalDomain')) document.getElementById('cardTotalDomain').innerHTML = `<i class="fa-solid fa-globe text-blue-400 mr-1"></i> Domain: ${totalDomain}`;
+    if (document.getElementById('cardTotalServer')) document.getElementById('cardTotalServer').innerHTML = `<i class="fa-solid fa-server text-indigo-400 mr-1"></i> Server: ${totalServer}`;
+    
+    if (document.getElementById('cardActive')) document.getElementById('cardActive').innerText = activeCount;
+    if (document.getElementById('cardActiveSub')) document.getElementById('cardActiveSub').innerText = activeCount;
+    if (document.getElementById('cardInactive')) document.getElementById('cardInactive').innerText = inactiveCount < 0 ? 0 : inactiveCount;
+
+    if (document.getElementById('cardAssessed')) document.getElementById('cardAssessed').innerText = assessedCount;
+    if (document.getElementById('cardAssessedSub')) document.getElementById('cardAssessedSub').innerText = assessedCount;
+    if (document.getElementById('cardPending')) document.getElementById('cardPending').innerText = pendingCount < 0 ? 0 : pendingCount;
+
+    if (document.getElementById('cardPdpa')) document.getElementById('cardPdpa').innerText = pdpaCount;
+}
 
         function renderMainTable() {
             const tbody = document.getElementById('mainTableBody');
@@ -872,38 +898,40 @@
         }
 
         function prepareSummaryData() {
-            summaryDataList = [];
-            const allRows = document.querySelectorAll('#mainTableBody tr.asset-row');
-            
-            allRows.forEach(row => {
-                const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-                if (isActive) {
-                    const id = row.getAttribute('data-id');
-                    const asset = allAssets.find(a => a.id.toString() === id.toString());
-                    if(asset) {
-                        summaryDataList.push({
-                            id: asset.id,
-                            isSaved: asset.isSaved,
-                            contact: asset.contact,
-                            ip: asset.ip,
-                            privateIp: asset.privateIp,
-                            domain: asset.domain,
-                            typeFilter: asset.typeFilter,
-                            nameVal: row.querySelector('.name-input').value,
-                            typeVal: row.querySelector('.type-select').value,
-                            noteVal: row.querySelector('.note-input').value,
-                            hasPdpa: row.querySelector('.pdpa-cb').checked,
-                            c: row.querySelector('.c-select').value,
-                            i: row.querySelector('.i-select').value,
-                            a: row.querySelector('.a-select').value,
-                            impact: row.querySelector('.impact-badge').textContent
-                        });
-                    }
-                }
-            });
-
-            applySummaryFilterAndPagination(true);
+    summaryDataList = [];
+    const allRows = document.querySelectorAll('#mainTableBody tr.asset-row');
+    
+    allRows.forEach(row => {
+        const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
+        
+        // 🟢 ดึงไปแสดงในหน้าสรุปเฉพาะรายการที่ติ๊ก "ยืนยันใช้งาน" เท่านั้น
+        if (isActive) {
+            const id = row.getAttribute('data-id');
+            const asset = allAssets.find(a => a.id.toString() === id.toString());
+            if (asset) {
+                summaryDataList.push({
+                    id: asset.id,
+                    isSaved: asset.isSaved,
+                    contact: asset.contact,
+                    ip: asset.ip,
+                    privateIp: asset.privateIp,
+                    domain: asset.domain,
+                    typeFilter: asset.typeFilter,
+                    nameVal: row.querySelector('.name-input').value,
+                    typeVal: row.querySelector('.type-select').value,
+                    noteVal: row.querySelector('.note-input').value,
+                    hasPdpa: row.querySelector('.pdpa-cb').checked,
+                    c: row.querySelector('.c-select').value,
+                    i: row.querySelector('.i-select').value,
+                    a: row.querySelector('.a-select').value,
+                    impact: row.querySelector('.impact-badge').textContent
+                });
+            }
         }
+    });
+
+    applySummaryFilterAndPagination(true);
+}
 
         function applySummaryFilterAndPagination(resetPage = false) {
             if (resetPage) summaryCurrentPage = 1;
@@ -1047,45 +1075,47 @@
         }
 
         async function submitToDatabase() {
-            const payloadData = [];
-            document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
-                const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-                const id = row.getAttribute('data-id');
-                if(id) {
-                    payloadData.push({
-                        id: id,
-                        resourceName: row.querySelector('.name-input').value,
-                        sysType: row.querySelector('.type-select').value,
-                        note: row.querySelector('.note-input').value,
-                        pdpa: row.querySelector('.pdpa-cb').checked,
-                        c: row.querySelector('.c-select').value,
-                        i: row.querySelector('.i-select').value,
-                        a: row.querySelector('.a-select').value,
-                        impact: parseInt(row.querySelector('.impact-badge').textContent),
-                        status: isActive ? "ยืนยันใช้งาน" : "ไม่ใช้งาน"
-                    });
-                }
+    const payloadData = [];
+    document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
+        const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
+        const id = row.getAttribute('data-id');
+        
+        // 🟢 ปรับเงื่อนไข: บันทึกเฉพาะแถวที่มี ID และถูกกด "ยืนยันใช้งาน (isActive === true)" เท่านั้น
+        if (id && isActive) {
+            payloadData.push({
+                id: id,
+                resourceName: row.querySelector('.name-input').value,
+                sysType: row.querySelector('.type-select').value,
+                note: row.querySelector('.note-input').value,
+                pdpa: row.querySelector('.pdpa-cb').checked,
+                c: row.querySelector('.c-select').value,
+                i: row.querySelector('.i-select').value,
+                a: row.querySelector('.a-select').value,
+                impact: parseInt(row.querySelector('.impact-badge').textContent),
+                status: "ยืนยันใช้งาน"
             });
-
-            if(payloadData.length === 0) {
-                alert("โปรดเลือกอย่างน้อย 1 รายการเพื่อบันทึก");
-                return;
-            }
-
-            const btn = document.getElementById('btnSaveFinal');
-            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
-            btn.disabled = true;
-
-            const res = await callBackend("saveAssessmentData", { agency: userAgency, assessor: userName, assets: payloadData });
-
-            if(res && res.success) {
-                document.getElementById('successPopup').classList.remove('hidden');
-            } else {
-                alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
-            }
-            btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
-            btn.disabled = false;
         }
+    });
+
+    if (payloadData.length === 0) {
+        alert("โปรดเลือกอย่างน้อย 1 รายการที่ต้องการยืนยันใช้งานเพื่อบันทึก");
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveFinal');
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
+    btn.disabled = true;
+
+    const res = await callBackend("saveAssessmentData", { agency: userAgency, assessor: userName, assets: payloadData });
+
+    if (res && res.success) {
+        document.getElementById('successPopup').classList.remove('hidden');
+    } else {
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
+    }
+    btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
+    btn.disabled = false;
+}
     </script>
 </body>
 </html>
