@@ -702,16 +702,27 @@
                     ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
 
-                const isChecked = (currentStatus === 'ยืนยันใช้งาน' || item.isSaved) ? 'checked' : '';
+                const currentStatus = item.status || (item.isSaved ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
+                const isChecked = (currentStatus === 'ยืนยันใช้งาน' || item.isSaved);
                 const rowDisabledClass = isChecked ? '' : 'row-disabled';
                 const fieldDisabled = isChecked ? '' : 'disabled';
-
+                const statusSelectHtml = `
+                    <select onchange="handleStatusChange(this)" class="status-select px-1.5 py-1 text-[11px] font-bold rounded border transition focus:outline-none cursor-pointer ${
+                        currentStatus === 'ยืนยันใช้งาน' 
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                            : 'bg-amber-100 text-amber-800 border-amber-300'
+                    }">
+                        <option value="ยืนยันใช้งาน" ${currentStatus === 'ยืนยันใช้งาน' ? 'selected' : ''}>ยืนยันใช้งาน</option>
+                        <option value="ไม่ใช้งาน" ${currentStatus === 'ไม่ใช้งาน' ? 'selected' : ''}>ไม่ใช้งาน</option>
+                    </select>
+                `;
                 const rowHtml = `
                     <tr class="asset-row ${rowDisabledClass} hover:bg-slate-50 transition" data-id="${item.id}" data-type="${item.typeFilter}">
                         <td class="py-2 px-2 border-r border-slate-100">
                             <input type="checkbox" onchange="toggleRowActive(this)" class="active-cb w-4 h-4 text-emerald-600 rounded cursor-pointer" ${isChecked}>
                         </td>
                         <td class="py-2 px-1 text-slate-400 font-medium border-r border-slate-100">${++count}</td>
+                        <td class="py-2 px-1 border-r border-slate-100">${statusSelectHtml}</td>
                         <td class="py-2 px-1 border-r border-slate-100">${statusBadge}</td>
                         <td class="py-2 px-2 text-slate-600 font-medium text-[11px] border-r border-slate-100">${item.contact || '-'}</td>
                         <td class="py-2 px-2 cell-type border-r border-slate-100">${badgeType}</td>
@@ -771,7 +782,23 @@
             const masterCb = document.getElementById('selectAllCb');
             if (masterCb) masterCb.checked = false;
         }
+          // ฟังก์ชันจัดการเมื่อมีการเปลี่ยนค่าใน Dropdown สถานะ
+          function handleStatusChange(selectElem) {
+              const row = selectElem.closest('tr');
+              const activeCb = row.querySelector('.active-cb');
+              const selectedVal = selectElem.value;
 
+              if (selectedVal === "ยืนยันใช้งาน") {
+                  selectElem.className = "status-select px-1.5 py-1 text-[11px] font-bold rounded border transition focus:outline-none cursor-pointer bg-emerald-100 text-emerald-800 border-emerald-300";
+                  if (activeCb) activeCb.checked = true;
+              } else {
+                  selectElem.className = "status-select px-1.5 py-1 text-[11px] font-bold rounded border transition focus:outline-none cursor-pointer bg-amber-100 text-amber-800 border-amber-300";
+                  if (activeCb) activeCb.checked = false;
+              }
+
+              // เรียกฟังก์ชันเปิด/ปิดการกรอกข้อมูลในแถวนั้น
+              toggleRowActive(activeCb, true);
+          }
         function sortTable(column) {
             const tbody = document.getElementById('mainTableBody');
             const rows = Array.from(tbody.querySelectorAll('.asset-row'));
