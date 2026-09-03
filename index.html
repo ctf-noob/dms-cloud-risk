@@ -478,34 +478,111 @@
         // 🔴 1. วาง URL ของ Google Apps Script ที่ Deploy ไว้ตรงนี้
         const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzrqDibi-z2ejZbLG76WU8Ga3-qdQDILykwgmF7BMxscFF6Sx1_Odw8sx4sKr_cUHVh/exec";
 
-        let allAssets = [];
         let userAgency = "";
-        let userName = "";
+let userEmail = "";
+let userName = "";
+let allAssets = [];
+
+// ฟังก์ชันเรียก API
+async function callBackend(action, payload = {}) {
+    try {
+        const response = await fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: action, payload: payload })
+        });
+        const res = await response.json();
+        return res; // คืนค่า { success: true, data: [...] }
+    } catch (err) {
+        console.error("Backend Call Error:", err);
+        return { success: false, message: err.toString() };
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async function() {
+    // 🔴 2. เช็ก Session ยืนยันตัวตนก่อน หากไม่มีดีดกลับหน้าเข้าสู่ระบบทันที
+    userAgency = sessionStorage.getItem('mfa_agency');
+    userEmail = sessionStorage.getItem('mfa_email');
+    userName = sessionStorage.getItem('mfa_name');
+
+    if (!userAgency || !userEmail) {
+        alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
+        window.location.href = "auth.html"; // หรือ index.html ตามชื่อหน้าล็อกอิน
+        return;
+    }
+
+    // แสดงชื่อผู้ใช้และหน่วยงานบนหน้าจอ
+    if (document.getElementById('displayUserName')) {
+        document.getElementById('displayUserName').textContent = userName;
+    }
+    if (document.getElementById('displayUserAgency')) {
+        document.getElementById('displayUserAgency').textContent = userAgency;
+    }
+
+    // เริ่มโหลดข้อมูล
+    await loadDataFromCloud();
+});
+
+// 🚀 3. ฟังก์ชันโหลดข้อมูลที่แก้ไขให้ไม่ค้าง + มี Timeout 10 วินาที
+async function loadDataFromCloud() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('hidden', 'opacity-0');
+    }
+
+    // ตั้งระบบ Timeout ดักจับหากค้างเกิน 10 วินาที
+    let isTimedOut = false;
+    const timeoutTimer = setTimeout(() => {
+        isTimedOut = true;
+        if (overlay) overlay.classList.add('hidden');
+        alert("การดึงข้อมูลใช้เวลานานเกินไป ระบบจะนำท่านกลับสู่หน้าเข้าสู่ระบบ");
+        sessionStorage.clear();
+        window.location.href = "auth.html";
+    }, 10000);
+
+    try {
+        const res = await callBackend("getAllRiskCloudData");
         
-        let currentPage = 1;
-        let pageSize = 10;
-        let sortDirection = {};
+        if (isTimedOut) return;
+        clearTimeout(timeoutTimer);
 
-        let summaryCurrentPage = 1;
-        let summaryPageSize = 10;
-        let summaryDataList = [];
-        let filteredSummaryDataList = [];
-        let summarySortDirection = {};
+        // ดึงข้อมูลสำเร็จ (res.success === true และ res.data เป็น Array)
+        if (res && res.success && Array.isArray(res.data)) {
+            
+            // กรองเอาเฉพาะข้อมูลของหน่วยงานตนเอง
+            allAssets = res.data.filter(item => {
+                return item.agency && item.agency.trim() === userAgency.trim();
+            });
 
-        // ฟังก์ชันสำหรับยิง API หา Apps Script
-        async function callBackend(action, payload = {}) {
-            try {
-                const response = await fetch(BACKEND_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: action, payload: payload })
-                });
-                const res = await response.json();
-                return res.success ? res.data : { success: false, message: res.message || "เกิดข้อผิดพลาด" };
-            } catch (err) {
-                return { success: false, message: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + err.toString() };
+            // สั่ง Render ตาราง
+            if (typeof renderMainTable === "function") renderMainTable();
+            if (typeof updateCardDashboard === "function") updateCardDashboard();
+            if (typeof applyFilterAndPagination === "function") applyFilterAndPagination(true);
+
+            // ปิด Overlay กำลังโหลด
+            if (overlay) {
+                overlay.classList.add('opacity-0');
+                setTimeout(() => { 
+                    overlay.classList.add('hidden'); 
+                    const popup = document.getElementById('announcementPopup');
+                    if (popup) popup.classList.remove('hidden');
+                }, 300);
             }
+
+        } else {
+            if (overlay) overlay.classList.add('hidden');
+            alert("ไม่สามารถดึงข้อมูลได้: " + (res.message || "รูปแบบข้อมูลไม่ถูกต้อง"));
+            window.location.href = "auth.html";
         }
+
+    } catch (err) {
+        if (isTimedOut) return;
+        clearTimeout(timeoutTimer);
+        if (overlay) overlay.classList.add('hidden');
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.toString());
+        window.location.href = "auth.html";
+    }
+}
 
         const modalInfoData = {
             pdpa: {

@@ -254,25 +254,28 @@ function getAllRiskCloudData() {
       if(row[1]) {
         const hasSaved = (row[8] && row[8].toString().trim() !== "") || (row[10] && row[10].toString().trim() !== "");
 
-        assets.push({
-          id: row[0] ? row[0].toString() : '',
-          agency: row[1] ? row[1].toString() : '',
-          typeFilter: row[2] ? row[2].toString() : '', 
-          name: row[3] ? row[3].toString() : '',       
-          ip: row[4] ? row[4].toString() : '',          
-          privateIp: row[5] ? row[5].toString() : '',   
-          projectId: row[6] ? row[6].toString() : '',
-          domain: row[7] ? row[7].toString() : '',      
-          contact: row[8] ? row[8].toString() : '',
-          note: row[9] ? row[9].toString() : '',         
-          sysType: row[10] ? row[10].toString() : 'ระบบบริการ (Web Services)',
-          pdpa: (row[11] === true || row[11] === 'TRUE' || row[11] === 'ใช่'),
-          c: parseInt(row[12]) || 1,
-          i: parseInt(row[13]) || 1,
-          a: parseInt(row[14]) || 1,
-          impact: parseInt(row[15]) || 1,
-          status: row[16] ? row[16].toString() : 'ไม่ใช้งาน',
-          isSaved: hasSaved
+assets.push({
+  id: row[0] ? row[0].toString() : '',
+  agency: row[1] ? row[1].toString() : '',
+  typeFilter: row[2] ? row[2].toString() : '', 
+  name: row[3] ? row[3].toString() : '',       
+  ip: row[4] ? row[4].toString() : '',          
+  privateIp: row[5] ? row[5].toString() : '',   
+  projectId: row[6] ? row[6].toString() : '',
+  domain: row[7] ? row[7].toString() : '',      
+  contact: row[8] ? row[8].toString() : '',
+  note: row[9] ? row[9].toString() : '',         
+  sysType: row[10] ? row[10].toString() : 'ระบบบริการ (Web Services)',
+  pdpa: (row[11] === true || row[11] === 'TRUE' || row[11] === 'ใช่'),
+  c: parseInt(row[12]) || 1,
+  i: parseInt(row[13]) || 1,
+  a: parseInt(row[14]) || 1,
+  impact: parseInt(row[15]) || 1,
+  
+  // 🟢 ปรับตรงนี้: ถ้าใน Sheets เป็นค่าว่าง ให้ใส่คำว่า "ไม่ใช้งาน" ให้อัตโนมัติทันที
+  status: (row[16] && row[16].toString().trim() !== '') ? row[16].toString().trim() : 'ไม่ใช้งาน',
+  
+  isSaved: hasSaved
         });
       }
     }
