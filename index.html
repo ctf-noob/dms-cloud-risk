@@ -164,7 +164,7 @@
                                     </div>
                                 </th>
                                 <th rowspan="2" class="py-3 px-2 w-8 border-r border-slate-700">#</th>
-                                <th rowspan="2" class="py-3 px-2 min-w-[90px] border-r border-slate-700">สถานะ</th>
+                                <th rowspan="2" class="py-3 px-2 min-w-[120px] border-r border-slate-700">สถานะ</th>
                                 <th rowspan="2" class="py-3 px-3 min-w-[130px] border-r border-slate-700">ผู้บันทึกล่าสุด</th>
                                 <th rowspan="2" onclick="sortTable('type')" class="py-3 px-3 min-w-[90px] th-sortable border-r border-slate-700">
                                     ประเภท <i class="fa-solid fa-sort ml-1 text-slate-400"></i>
@@ -747,15 +747,57 @@
                     ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Domain</span>`
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
-                const currentStatus = item.status || (item.isSaved ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
-                const statusBadge = (currentStatus === 'ยืนยันใช้งาน')
-                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
+// 1. ดึงค่าสถานะปัจจุบัน
+const currentStatus = item.status || (item.isSaved ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
 
-                const isChecked = (currentStatus === 'ยืนยันใช้งาน' || item.isSaved) ? 'checked' : '';
-                const rowDisabledClass = isChecked ? '' : 'row-disabled';
-                const fieldDisabled = isChecked ? '' : 'disabled';
+// 2. กำหนดคลาสสีของ Dropdown ตามสถานะ (สีเขียว / สีส้ม)
+const selectColorClass = (currentStatus === 'ยืนยันใช้งาน')
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    : 'bg-amber-100 text-amber-800 border-amber-200';
 
+// 3. สร้าง Dropdown (แทน statusBadge เดิม)
+const statusDropdown = `
+    <select 
+        class="${selectColorClass} px-2 py-1 rounded text-xs font-bold border focus:outline-none cursor-pointer transition-colors"
+        data-id="${item.id}"
+        onchange="handleStatusChange(this, '${item.id}')"
+    >
+        <option value="ยืนยันใช้งาน" class="bg-white text-slate-800 font-normal" ${currentStatus === 'ยืนยันใช้งาน' ? 'selected' : ''}>ยืนยันใช้งาน</option>
+        <option value="ไม่ใช้งาน" class="bg-white text-slate-800 font-normal" ${currentStatus === 'ไม่ใช้งาน' ? 'selected' : ''}>ไม่ใช้งาน</option>
+    </select>
+`;
+
+// 4. เช็กสถานะเพื่อเปิด/ปิด การกรอกข้อมูลในแถว
+const isChecked = (currentStatus === 'ยืนยันใช้งาน' || item.isSaved) ? 'checked' : '';
+const rowDisabledClass = isChecked ? '' : 'row-disabled';
+const fieldDisabled = isChecked ? '' : 'disabled';
+// ==========================================
+// ฟังก์ชันสำหรับจัดการเมื่อเปลี่ยน Dropdown สถานะ
+// ==========================================
+function handleStatusChange(selectElement) {
+    const value = selectElement.value;
+    const row = selectElement.closest('tr');
+    const checkbox = row.querySelector('.active-cb');
+    
+    // 1. เปลี่ยนสี Dropdown ทันที
+    if (value === 'ยืนยันใช้งาน') {
+        selectElement.className = "status-select bg-emerald-100 text-emerald-800 border-emerald-200 px-2 py-1 rounded text-xs font-bold border focus:outline-none cursor-pointer transition-colors";
+        
+        // 2. ติ๊กถูกที่ Checkbox ด้านหน้าให้อัตโนมัติ พร้อมปลดล็อคแถว
+        if(checkbox && !checkbox.checked) {
+            checkbox.checked = true;
+            toggleRowActive(checkbox, true);
+        }
+    } else {
+        selectElement.className = "status-select bg-amber-100 text-amber-800 border-amber-200 px-2 py-1 rounded text-xs font-bold border focus:outline-none cursor-pointer transition-colors";
+        
+        // 2. เอาติ๊กถูกออกให้อัตโนมัติ พร้อมล็อคแถว
+        if(checkbox && checkbox.checked) {
+            checkbox.checked = false;
+            toggleRowActive(checkbox, true);
+        }
+    }
+}
                 const rowHtml = `
                     <tr class="asset-row ${rowDisabledClass} hover:bg-slate-50 transition" data-id="${item.id}" data-type="${item.typeFilter}">
                         <td class="py-2 px-2 border-r border-slate-100">
