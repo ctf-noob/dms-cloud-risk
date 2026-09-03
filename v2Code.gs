@@ -1,14 +1,3 @@
-// ==========================================
-// CONFIGURATION
-// ==========================================
-const SSO_CONFIG = {
-  authority: "https://sso.dms.go.th/keycloak/realms/dms/protocol/openid-connect/",
-  profileUrl: "https://sso.dms.go.th/dms-sso-api/api/Authen/Verify/Profile",
-  clientId: "dmscloudmanagement", // 🔒 ใส่ Client ID ที่ได้รับจากทีม SSO
-  clientSecret: "KVKie79UafxveaeiW3J2iRCs7ablLCcY", // 🔒 ใส่ Client Authenticator / Secret
-  redirectUri: "https://cloud.dms.go.th/sso-callback.html" // 📍 Redirect URI ที่ลงทะเบียนไว้
-};
-
 // 1. ฟังก์ชันรองรับการเช็กสถานะการเชื่อมต่อ (GET)
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({ status: "API Online", timestamp: new Date() }))
@@ -48,15 +37,6 @@ function doPost(e) {
       case "getIndexPage":
         result = getIndexPage();
         break;
-        
-      // 🟢 เพิ่ม Action สำหรับ DMS SSO
-      case "getSsoLoginUrl":
-        result = getSsoLoginUrl();
-        break;
-      case "handleSsoCallback":
-        result = handleSsoCallback(payload.code);
-        break;
-
       default:
         result = { success: false, message: "Unrecognized Action: " + action };
     }
@@ -71,94 +51,7 @@ function doPost(e) {
 }
 
 // ==========================================
-// DMS SSO LOGIC (Keycloak & Profile API)
-// ==========================================
-
-function getSsoLoginUrl() {
-  try {
-    const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    const authUrl = SSO_CONFIG.authority + "auth?" +
-      "client_id=" + encodeURIComponent(SSO_CONFIG.clientId) +
-      "&response_type=code" +
-      "&scope=" + encodeURIComponent("openid profile cid") +
-      "&redirect_uri=" + encodeURIComponent(SSO_CONFIG.redirectUri) +
-      "&state=" + state +
-      "&nonce=" + state;
-      
-    return { success: true, url: authUrl, state: state };
-  } catch (error) {
-    return { success: false, message: error.toString() };
-  }
-}
-
-function handleSsoCallback(code) {
-  try {
-    if (!code) return { success: false, message: "ไม่พบ Authorization Code" };
-
-    // 1. แลก Code เป็น Access Token
-    const tokenPayload = {
-      grant_type: "authorization_code",
-      code: code,
-      redirect_uri: SSO_CONFIG.redirectUri,
-      client_id: SSO_CONFIG.clientId,
-      client_secret: SSO_CONFIG.clientSecret
-    };
-
-    const tokenOptions = {
-      method: "post",
-      payload: tokenPayload,
-      muteHttpExceptions: true
-    };
-
-    const tokenResponse = UrlFetchApp.fetch(SSO_CONFIG.authority + "token", tokenOptions);
-    const tokenData = JSON.parse(tokenResponse.getContentText());
-
-    if (!tokenData.access_token) {
-      return { success: false, message: "ไม่สามารถแลก Access Token จาก DMS SSO ได้: " + (tokenData.error_description || tokenData.error) };
-    }
-
-    const accessToken = tokenData.access_token;
-
-    // 2. ดึงข้อมูล Profile จาก dms-sso-api
-    const profileOptions = {
-      method: "post",
-      headers: {
-        "AccessToken": accessToken,
-        "Client-Id": SSO_CONFIG.clientId
-      },
-      contentType: "application/json",
-      payload: JSON.stringify({}),
-      muteHttpExceptions: true
-    };
-
-    const profileResponse = UrlFetchApp.fetch(SSO_CONFIG.profileUrl, profileOptions);
-    const profileData = JSON.parse(profileResponse.getContentText());
-
-    if (profileData && profileData.data && profileData.data.userSsoInfo) {
-      const user = profileData.data.userSsoInfo;
-      const cid = user.cid || user.citizenId || user.personalId || '';
-      const fname = user.firstName || user.firstname || user.givenName || '';
-      const lname = user.lastName || user.lastname || user.familyName || '';
-      
-      return {
-        success: true,
-        user: {
-          cid: cid,
-          fullname: (fname + " " + lname).trim() || user.username || "ผู้ใช้งาน DMS SSO",
-          email: user.email || user.mail || cid
-        }
-      };
-    } else {
-      return { success: false, message: "ไม่พบข้อมูล userSsoInfo จากระบบ DMS SSO" };
-    }
-
-  } catch (error) {
-    return { success: false, message: error.toString() };
-  }
-}
-
-// ==========================================
-// AUTH LOGIC (OTP & REGISTER)
+// AUTH LOGIC
 // ==========================================
 
 function registerUser(agency, email, phone, fullname) {
@@ -361,25 +254,28 @@ function getAllRiskCloudData() {
       if(row[1]) {
         const hasSaved = (row[8] && row[8].toString().trim() !== "") || (row[10] && row[10].toString().trim() !== "");
 
-        assets.push({
-          id: row[0] ? row[0].toString() : '',
-          agency: row[1] ? row[1].toString() : '',
-          typeFilter: row[2] ? row[2].toString() : '', 
-          name: row[3] ? row[3].toString() : '',       
-          ip: row[4] ? row[4].toString() : '',          
-          privateIp: row[5] ? row[5].toString() : '',   
-          projectId: row[6] ? row[6].toString() : '',
-          domain: row[7] ? row[7].toString() : '',      
-          contact: row[8] ? row[8].toString() : '',
-          note: row[9] ? row[9].toString() : '',         
-          sysType: row[10] ? row[10].toString() : 'ระบบบริการ (Web Services)',
-          pdpa: (row[11] === true || row[11] === 'TRUE' || row[11] === 'ใช่'),
-          c: parseInt(row[12]) || 1,
-          i: parseInt(row[13]) || 1,
-          a: parseInt(row[14]) || 1,
-          impact: parseInt(row[15]) || 1,
-          status: (row[16] && row[16].toString().trim() !== '') ? row[16].toString().trim() : 'ไม่ใช้งาน',
-          isSaved: hasSaved
+assets.push({
+  id: row[0] ? row[0].toString() : '',
+  agency: row[1] ? row[1].toString() : '',
+  typeFilter: row[2] ? row[2].toString() : '', 
+  name: row[3] ? row[3].toString() : '',       
+  ip: row[4] ? row[4].toString() : '',          
+  privateIp: row[5] ? row[5].toString() : '',   
+  projectId: row[6] ? row[6].toString() : '',
+  domain: row[7] ? row[7].toString() : '',      
+  contact: row[8] ? row[8].toString() : '',
+  note: row[9] ? row[9].toString() : '',         
+  sysType: row[10] ? row[10].toString() : 'ระบบบริการ (Web Services)',
+  pdpa: (row[11] === true || row[11] === 'TRUE' || row[11] === 'ใช่'),
+  c: parseInt(row[12]) || 1,
+  i: parseInt(row[13]) || 1,
+  a: parseInt(row[14]) || 1,
+  impact: parseInt(row[15]) || 1,
+  
+  // 🟢 ปรับตรงนี้: ถ้าใน Sheets เป็นค่าว่าง ให้ใส่คำว่า "ไม่ใช้งาน" ให้อัตโนมัติทันที
+  status: (row[16] && row[16].toString().trim() !== '') ? row[16].toString().trim() : 'ไม่ใช้งาน',
+  
+  isSaved: hasSaved
         });
       }
     }
@@ -408,7 +304,7 @@ function saveAssessmentData(payload) {
     const fullRange = sheet.getDataRange();
     const data = fullRange.getValues();
     
-    // สร้าง Map สำหรับค้นหา ID
+    // สร้าง Map สำหรับค้นหา ID ได้เร็วในระดับ O(1)
     const updates = new Map();
     payload.assets.forEach(asset => {
       if (asset.id) updates.set(asset.id.toString(), asset);
@@ -416,33 +312,34 @@ function saveAssessmentData(payload) {
 
     let isModified = false;
 
-    // 3. แก้ไขข้อมูลใน Memory
+    // 3. แก้ไขข้อมูลใน Memory (Array) ก่อน ไม่ยิงไป Sheets ทีละบรรทัด
     for (let i = 1; i < data.length; i++) {
       const rowId = data[i][0] ? data[i][0].toString() : null;
       
       if (rowId && updates.has(rowId)) {
         const update = updates.get(rowId);
         
-        data[i][3]  = update.resourceName || '';               // คอลัมน์ D
-        data[i][8]  = payload.assessor || '';                  // คอลัมน์ I
-        data[i][9]  = update.note || '';                       // คอลัมน์ J
-        data[i][10] = update.sysType || 'ระบบบริการ (Web Services)'; // คอลัมน์ K
+        data[i][3]  = update.resourceName;                   // คอลัมน์ D
+        data[i][8]  = payload.assessor;                       // คอลัมน์ I
+        data[i][9]  = update.note;                           // คอลัมน์ J
+        data[i][10] = update.sysType;                        // คอลัมน์ K
         data[i][11] = update.pdpa ? "TRUE" : "FALSE";         // คอลัมน์ L
         data[i][12] = parseInt(update.c) || 1;               // คอลัมน์ M
         data[i][13] = parseInt(update.i) || 1;               // คอลัมน์ N
         data[i][14] = parseInt(update.a) || 1;               // คอลัมน์ O
         data[i][15] = parseInt(update.impact) || 1;          // คอลัมน์ P
-        data[i][16] = (update.status && update.status.toString().trim() !== '') ? update.status.toString().trim() : 'ไม่ใช้งาน'; // คอลัมน์ Q
+        data[i][16] = update.status || "ไม่ใช้งาน";           // คอลัมน์ Q
         
         isModified = true;
       }
     }
 
-    // 4. สั่งเขียนข้อมูลกลับลง Sheets เพียงครั้งเดียว
+    // 4. สั่งเขียนข้อมูลกลับลง Sheets เพียงครั้งเดียวเท่านั้น (Batch Write)
     if (isModified) {
       fullRange.setValues(data);
     }
     
+    // ล้าง Cache เพื่อให้ดึงข้อมูลใหม่ทันที
     CacheService.getScriptCache().remove("all_risk_cloud_data");
     return { success: true, message: "บันทึกการประเมินลงฐานข้อมูลเรียบร้อยแล้ว!" };
 

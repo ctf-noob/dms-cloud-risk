@@ -1,0 +1,11 @@
+<div class="center-screen" style="min-height: 100vh">
+  <div class="form-container" style="width: 100%; max-width: 420px; text-align: center">
+    <h2>DMS SSO</h2>
+    @if (failed()) {
+    <p class="alert">{{ message() }}</p>
+    <a href="/app/login">กลับไปหน้าเข้าสู่ระบบ</a>
+    } @else {
+    <p>{{ message() }}</p>
+    }
+  </div>
+</div>
