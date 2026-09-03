@@ -95,7 +95,6 @@ function handleSsoCallback(code) {
   try {
     if (!code) return { success: false, message: "ไม่พบ Authorization Code" };
 
-    // 1. แลก Code เป็น Access Token
     const tokenPayload = {
       grant_type: "authorization_code",
       code: code,
@@ -114,12 +113,11 @@ function handleSsoCallback(code) {
     const tokenData = JSON.parse(tokenResponse.getContentText());
 
     if (!tokenData.access_token) {
-      return { success: false, message: "ไม่สามารถแลก Access Token จาก DMS SSO ได้: " + (tokenData.error_description || tokenData.error) };
+      return { success: false, message: "ไม่สามารถแลก Access Token ได้: " + (tokenData.error_description || tokenData.error) };
     }
 
     const accessToken = tokenData.access_token;
 
-    // 2. ดึงข้อมูล Profile จาก dms-sso-api
     const profileOptions = {
       method: "post",
       headers: {
@@ -135,22 +133,55 @@ function handleSsoCallback(code) {
     const profileData = JSON.parse(profileResponse.getContentText());
 
     if (profileData && profileData.data && profileData.data.userSsoInfo) {
-      const user = profileData.data.userSsoInfo;
-      const cid = user.cid || user.citizenId || user.personalId || '';
-      const fname = user.firstName || user.firstname || user.givenName || '';
-      const lname = user.lastName || user.lastname || user.familyName || '';
-      const fullname = (fname + " " + lname).trim() || user.username || "ผู้ใช้งาน DMS SSO";
-      const email = user.email || user.mail || cid;
+      const p = profileData.data.userSsoInfo;
+      
+      // 🟢 ฟังก์ชันเช็กตัวอักษรเพื่อแยก ไทย/อังกฤษ ชัดเจน
+      const isThai = (str) => /[\u0E00-\u0E7F]/.test(str || '');
+      const isEng = (str) => /[a-zA-Z]/.test(str || '') && !isThai(str);
 
-      // 🟢 บันทึกข้อมูล CID, FullName, Email ลงฐานข้อมูล UserDB
-      saveSsoUserToSheet(cid, fullname, email);
+      const possibleFirsts = [p.firstNameTh, p.thFirstName, p.nameTh, p.firstName, p.firstname, p.givenName, p.given_name, p.firstNameEn, p.enFirstName, p.name];
+      const possibleLasts = [p.lastNameTh, p.thLastName, p.surnameTh, p.lastName, p.lastname, p.familyName, p.family_name, p.surname, p.lastNameEn, p.enLastName];
+
+      const pFirsts = possibleFirsts.filter(Boolean).map(s => s.toString().trim());
+      const pLasts = possibleLasts.filter(Boolean).map(s => s.toString().trim());
+
+      // แยกภาษาไทย-อังกฤษ อย่างแม่นยำ
+      const thFirst = pFirsts.find(isThai) || '';
+      const thLast = pLasts.find(isThai) || '';
+      const enFirst = pFirsts.find(isEng) || '';
+      const enLast = pLasts.find(isEng) || '';
+
+      // ประกอบร่างชื่อ-สกุล เป็นภาษาไทยให้แสดงผลที่เว็บ (หากไม่มีใช้ภาษาอังกฤษแทน)
+      let fullname = "";
+      if (thFirst && thLast) fullname = thFirst + " " + thLast;
+      else if (thFirst) fullname = thFirst;
+      else if (enFirst && enLast) fullname = enFirst + " " + enLast;
+      else fullname = p.username || "ผู้ใช้งาน DMS SSO";
+
+      const ssoProfile = {
+        username: p.username || p.userName || p.preferred_username || '',
+        title: p.titleName || p.title || p.ttl || p.prefix || '',
+        thFirstName: thFirst,
+        thLastName: thLast,
+        enFirstName: enFirst,
+        enLastName: enLast,
+        email: p.email || p.mail || p.cid || '',
+        phone: p.mobile || p.phoneNumber || p.telephone || '',
+        cid: p.cid || p.citizenId || p.personalId || '',
+        position: p.position || p.positionName || p.jobTitle || '',
+        fullname: fullname
+      };
+
+      // ส่งไปบันทึกลง UserDB และ Log
+      const dbUser = saveSsoUserToSheet(ssoProfile);
 
       return {
         success: true,
         user: {
-          cid: cid,
-          fullname: fullname,
-          email: email
+          cid: ssoProfile.cid,
+          fullname: dbUser.fullname,
+          email: ssoProfile.email,
+          agency: dbUser.agency 
         }
       };
     } else {
@@ -162,49 +193,74 @@ function handleSsoCallback(code) {
   }
 }
 
-// 🟢 ฟังก์ชันบันทึกข้อมูลผู้ใช้งานที่ล็อกอินผ่าน SSO ลงแผ่นงาน UserDB
-function saveSsoUserToSheet(cid, fullname, email) {
+// 🟢 ฟังก์ชันบันทึกและจับคู่ข้อมูล (อัปเดตให้บันทึกข้อมูลครบถ้วนลง UserDB)
+function saveSsoUserToSheet(profile) {
+  let mappedAgency = "เข้าสู่ระบบครั้งแรก (SSO)"; 
+  let mappedFullname = profile.fullname;
+
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     let sheet = ss.getSheetByName('UserDB');
     
     if (!sheet) {
       sheet = ss.insertSheet('UserDB');
-      sheet.appendRow(['Agency', 'Email', 'Phone/CID', 'FullName', 'LastLogin', 'IsActive']);
+      sheet.appendRow(['Agency', 'Email', 'Phone/CID', 'FullName', 'LastLogin', 'IsActive', 'Username', 'Title', 'ThFirstName', 'ThLastName', 'EnFirstName', 'EnLastName', 'CID', 'Position']);
     }
 
     const data = sheet.getDataRange().getValues();
     let userFound = false;
+    let rowIndex = -1;
 
-    // ค้นหาผู้ใช้งานจาก Email หรือ CID ใน UserDB
     for (let i = 1; i < data.length; i++) {
-      const dbEmail = data[i][1] ? data[i][1].toString() : '';
-      const dbCid = data[i][2] ? data[i][2].toString().replace(/^'/, '') : '';
+      const dbEmail = data[i][1] ? data[i][1].toString().trim() : '';
+      const dbPhoneCid = data[i][2] ? data[i][2].toString().replace(/^'/, '').trim() : '';
 
-      if ((email && dbEmail === email) || (cid && dbCid === cid.toString())) {
-        sheet.getRange(i + 1, 3).setValue("'" + cid);
-        sheet.getRange(i + 1, 4).setValue(fullname);
-        sheet.getRange(i + 1, 5).setValue(new Date()); // อัปเดตเวลาเข้าใช้งานล่าสุด
-        sheet.getRange(i + 1, 6).setValue(true);      // เปิดใช้งานอัตโนมัติสำหรับ SSO
+      if ((profile.email && dbEmail === profile.email) || (profile.cid && dbPhoneCid === profile.cid.toString())) {
         userFound = true;
+        rowIndex = i + 1;
+        
+        mappedAgency = data[i][0] ? data[i][0].toString() : mappedAgency;
+        mappedFullname = profile.fullname; // อัปเดตชื่อเป็นแบบล่าสุด
         break;
       }
     }
 
-    // หากยังไม่มีในระบบ ให้บันทึกเป็นผู้ใช้งานใหม่
-    if (!userFound) {
-      sheet.appendRow(['DMS SSO', email, "'" + cid, fullname, new Date(), true]);
+    if (userFound) {
+      // 📍 อัปเดตข้อมูลของผู้ใช้เดิม ลงใน UserDB
+      sheet.getRange(rowIndex, 3).setValue("'" + profile.cid);
+      sheet.getRange(rowIndex, 4).setValue(mappedFullname); 
+      sheet.getRange(rowIndex, 5).setValue(new Date()); 
+      sheet.getRange(rowIndex, 6).setValue(true); 
+      sheet.getRange(rowIndex, 7).setValue(profile.username);
+      sheet.getRange(rowIndex, 8).setValue(profile.title);
+      sheet.getRange(rowIndex, 9).setValue(profile.thFirstName);
+      sheet.getRange(rowIndex, 10).setValue(profile.thLastName);
+      sheet.getRange(rowIndex, 11).setValue(profile.enFirstName);
+      sheet.getRange(rowIndex, 12).setValue(profile.enLastName);
+      sheet.getRange(rowIndex, 13).setValue("'" + profile.cid);
+      sheet.getRange(rowIndex, 14).setValue(profile.position);
+    } else {
+      // 📍 สร้างผู้ใช้ใหม่ พร้อมข้อมูลครบถ้วน ลงใน UserDB
+      sheet.appendRow([
+        mappedAgency, profile.email, "'" + profile.cid, profile.fullname, new Date(), true,
+        profile.username, profile.title, profile.thFirstName, profile.thLastName, profile.enFirstName, profile.enLastName, "'" + profile.cid, profile.position
+      ]);
     }
 
-    // บันทึกการเข้าใช้งานลงในแผ่นงาน Log
+    // 📍 บันทึกลง Log ด้วยเช่นกัน
     const logSheet = ss.getSheetByName('Log');
     if (logSheet) {
-      logSheet.appendRow([new Date(), 'DMS SSO', email, cid, "SUCCESS (เข้าสู่ระบบผ่าน SSO)"]);
+      logSheet.appendRow([
+        new Date(), mappedAgency, profile.email, profile.phone || profile.cid, "SUCCESS (SSO Login)",
+        profile.username, profile.title, profile.thFirstName, profile.thLastName, profile.enFirstName, profile.enLastName, "'" + profile.cid, profile.position
+      ]);
     }
 
   } catch (err) {
     Logger.log("Error in saveSsoUserToSheet: " + err.toString());
   }
+
+  return { agency: mappedAgency, fullname: mappedFullname };
 }
 
 // ==========================================
@@ -441,24 +497,20 @@ function getAllRiskCloudData() {
   }
 }
 
-// 🚀 ฟังก์ชันบันทึกข้อมูลความเร็วสูง (Batch Update)
 function saveAssessmentData(payload) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('risk_cloud');
     if (!sheet) return { success: false, message: "ไม่พบชีต risk_cloud" };
 
-    // 1. บันทึก Log การบันทึก
     const logSheet = ss.getSheetByName('Sheet1');
     if (logSheet) {
       logSheet.appendRow([new Date(), payload.agency, payload.assessor, "อัปเดตแบบประเมินความเสี่ยง", payload.assets.length + " รายการ"]);
     }
 
-    // 2. ดึงข้อมูลทั้งหมดในครั้งเดียว
     const fullRange = sheet.getDataRange();
     const data = fullRange.getValues();
     
-    // สร้าง Map สำหรับค้นหา ID
     const updates = new Map();
     payload.assets.forEach(asset => {
       if (asset.id) updates.set(asset.id.toString(), asset);
@@ -466,29 +518,27 @@ function saveAssessmentData(payload) {
 
     let isModified = false;
 
-    // 3. แก้ไขข้อมูลใน Memory
     for (let i = 1; i < data.length; i++) {
       const rowId = data[i][0] ? data[i][0].toString() : null;
       
       if (rowId && updates.has(rowId)) {
         const update = updates.get(rowId);
         
-        data[i][3]  = update.resourceName || '';               // คอลัมน์ D
-        data[i][8]  = payload.assessor || '';                  // คอลัมน์ I
-        data[i][9]  = update.note || '';                       // คอลัมน์ J
-        data[i][10] = update.sysType || 'ระบบบริการ (Web Services)'; // คอลัมน์ K
-        data[i][11] = update.pdpa ? "TRUE" : "FALSE";         // คอลัมน์ L
-        data[i][12] = parseInt(update.c) || 1;               // คอลัมน์ M
-        data[i][13] = parseInt(update.i) || 1;               // คอลัมน์ N
-        data[i][14] = parseInt(update.a) || 1;               // คอลัมน์ O
-        data[i][15] = parseInt(update.impact) || 1;          // คอลัมน์ P
-        data[i][16] = (update.status && update.status.toString().trim() !== '') ? update.status.toString().trim() : 'ไม่ใช้งาน'; // คอลัมน์ Q
+        data[i][3]  = update.resourceName || '';               
+        data[i][8]  = payload.assessor || '';                  
+        data[i][9]  = update.note || '';                       
+        data[i][10] = update.sysType || 'ระบบบริการ (Web Services)'; 
+        data[i][11] = update.pdpa ? "TRUE" : "FALSE";         
+        data[i][12] = parseInt(update.c) || 1;               
+        data[i][13] = parseInt(update.i) || 1;               
+        data[i][14] = parseInt(update.a) || 1;               
+        data[i][15] = parseInt(update.impact) || 1;          
+        data[i][16] = (update.status && update.status.toString().trim() !== '') ? update.status.toString().trim() : 'ไม่ใช้งาน'; 
         
         isModified = true;
       }
     }
 
-    // 4. สั่งเขียนข้อมูลกลับลง Sheets เพียงครั้งเดียว
     if (isModified) {
       fullRange.setValues(data);
     }
