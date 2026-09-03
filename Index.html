@@ -34,8 +34,7 @@
                 <i class="fa-solid fa-book mr-2"></i> คู่มือ
             </a> -->
             <a href="docs/manual.pdf" target="_blank" class="flex items-center text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded transition">
-    <i class="fa-solid fa-book mr-2"></i> คู่มือ
-</a>
+            <i class="fa-solid fa-book mr-2"></i> คู่มือ</a>
             <span class="text-slate-400">|</span>
             <div class="flex items-center"><i class="fa-solid fa-user text-sm mr-2"></i><span id="profileName" class="text-sm font-medium">ผู้ใช้งาน</span></div>
             <span class="text-slate-400">|</span>
@@ -403,7 +402,8 @@
             <div class="p-6 overflow-y-auto text-sm text-slate-700 space-y-5 leading-relaxed bg-slate-50/50">
                 <div class="bg-white border-l-4 border-[#122e5a] p-4 rounded-r-lg shadow-sm">
                     <p class="font-bold text-[#122e5a]">
-                        <i class="fa-solid fa-file-lines mr-2 text-slate-400"></i> อ้างอิง: หนังสือ สธ 0212.07/ว7009 ลงวันที่ 13 สิงหาคม 2569
+                        <i class="fa-solid fa-file-lines mr-2 text-slate-400"></i> อ้างอิง: หนังสือ สธ 0212.07/ว7009 ลงวันที่ 13 สิงหาคม 2569 </i> 
+                        <a href="docs/สธ0212.07ว7009.pdf" target="_blank" class="flex items-center text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded transition">
                     </p>
                     <p class="mt-1 text-slate-600">ขอให้ทุกหน่วยงานในสังกัดสำนักงานปลัดกระทรวงสาธารณสุข ดำเนินการตามมาตรการเร่งด่วน 3 ประการ</p>
                 </div>
@@ -684,8 +684,8 @@
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
                 const statusBadge = item.isSaved 
-                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">บันทึกแล้ว</span>`
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ยังไม่ประเมิน</span>`;
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
 
                 const isChecked = item.isSaved ? 'checked' : '';
                 const rowDisabledClass = item.isSaved ? '' : 'row-disabled';
@@ -999,8 +999,8 @@
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
                 const statusBadge = data.isSaved 
-                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">บันทึกแล้ว</span>`
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ยังไม่ประเมิน</span>`;
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
 
                 summaryBody.insertAdjacentHTML('beforeend', `
                     <tr class="hover:bg-slate-50 transition">
