@@ -11,29 +11,47 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
-    body { font-family: 'Noto Sans Thai', sans-serif; }
+    body { 
+      font-family: 'Noto Sans Thai', sans-serif; 
+      /* 🟢 ตั้งค่าภาพพื้นหลังตรงนี้ */
+      background-image: url('img/cyber-claims.webp');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    
+    /* 🟢 เพิ่มเลเยอร์สีดำจางๆ ให้พื้นหลัง เพื่อให้กล่องข้อความตรงกลางอ่านง่ายขึ้น */
+    .bg-overlay {
+      background-color: rgba(15, 23, 42, 0.4); 
+      min-height: 100vh;
+      width: 100%;
+    }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+<!-- ลบ bg-slate-100 เดิมออก แล้วครอบด้วย .bg-overlay แทน -->
+<body class="m-0 p-0">
 
-  <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center space-y-4 border-t-4 border-[#122e5a]">
-    
-    <!-- Loading / Error Icon -->
-    <div id="iconContainer">
-      <i id="loadingIcon" class="fa-solid fa-circle-notch fa-spin text-5xl text-[#122e5a]"></i>
+  <div class="bg-overlay flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center space-y-4 border-t-4 border-[#122e5a]">
+      
+      <!-- Loading / Error Icon -->
+      <div id="iconContainer">
+        <i id="loadingIcon" class="fa-solid fa-circle-notch fa-spin text-5xl text-[#122e5a]"></i>
+      </div>
+
+      <!-- Title & Status Message -->
+      <h2 id="statusTitle" class="text-xl font-bold text-slate-800">DMS SSO</h2>
+      <p id="statusMessage" class="text-sm text-slate-600 leading-relaxed">กำลังยืนยันตัวตนผ่าน DMS SSO...</p>
+
+      <!-- Error Action Button (แสดงเฉพาะตอนเกิดข้อผิดพลาด) -->
+      <div id="errorAction" class="hidden pt-2">
+        <a href="auth.html" class="inline-block bg-[#122e5a] text-white text-xs font-bold py-2.5 px-5 rounded-lg hover:bg-blue-900 transition">
+          <i class="fa-solid fa-arrow-left mr-1.5"></i> กลับไปหน้าเข้าสู่ระบบ
+        </a>
+      </div>
+
     </div>
-
-    <!-- Title & Status Message -->
-    <h2 id="statusTitle" class="text-xl font-bold text-slate-800">DMS SSO</h2>
-    <p id="statusMessage" class="text-sm text-slate-600 leading-relaxed">กำลังยืนยันตัวตนผ่าน DMS SSO...</p>
-
-    <!-- Error Action Button (แสดงเฉพาะตอนเกิดข้อผิดพลาด) -->
-    <div id="errorAction" class="hidden pt-2">
-      <a href="auth.html" class="inline-block bg-[#122e5a] text-white text-xs font-bold py-2.5 px-5 rounded-lg hover:bg-blue-900 transition">
-        <i class="fa-solid fa-arrow-left mr-1.5"></i> กลับไปหน้าเข้าสู่ระบบ
-      </a>
-    </div>
-
   </div>
 
   <script>
