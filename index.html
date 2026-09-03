@@ -685,9 +685,12 @@
                     ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Domain</span>`
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
-                const statusBadge = item.isSaved 
-                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-circle mr-1"></i>ยืนยันใช้งาน</span>`
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-circle-xmark mr-1"></i>ไม่ใช้งาน</span>`;
+                // ปรับ Badge แสดงสถานะตามข้อมูล status จากฐานข้อมูล
+                const currentStatus = data.status || (data.isSaved ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
+
+                const statusBadge = (currentStatus === 'ยืนยันใช้งาน')
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
 
                 const isChecked = item.isSaved ? 'checked' : '';
                 const rowDisabledClass = item.isSaved ? '' : 'row-disabled';
@@ -1089,17 +1092,19 @@
                 const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
                 const id = row.getAttribute('data-id');
                 if(id && isActive) {
-                    payloadData.push({
-                        id: id,
-                        resourceName: row.querySelector('.name-input').value,
-                        sysType: row.querySelector('.type-select').value,
-                        note: row.querySelector('.note-input').value,
-                        pdpa: row.querySelector('.pdpa-cb').checked,
-                        c: row.querySelector('.c-select').value,
-                        i: row.querySelector('.i-select').value,
-                        a: row.querySelector('.a-select').value,
-                        impact: parseInt(row.querySelector('.impact-badge').textContent)
-                    });
+                  payloadData.push({
+                      id: id,
+                      resourceName: row.querySelector('.name-input').value,
+                      sysType: row.querySelector('.type-select').value,
+                      note: row.querySelector('.note-input').value,
+                      pdpa: row.querySelector('.pdpa-cb').checked,
+                      c: row.querySelector('.c-select').value,
+                      i: row.querySelector('.i-select').value,
+                      a: row.querySelector('.a-select').value,
+                      impact: parseInt(row.querySelector('.impact-badge').textContent),
+                      // 🟢 เพิ่มบรรทัดนี้: ส่งสถานะไปบันทึก (เช็กจาก Checkbox ยืนยันใช้งาน)
+                      status: isActive ? "ยืนยันใช้งาน" : "ไม่ใช้งาน"
+                  });
                 }
             });
 

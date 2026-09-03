@@ -12,7 +12,6 @@ function doPost(e) {
     const payload = data.payload || {};
     let result = {};
 
-    // Router: สั่งงานตาม action ที่ส่งมาจาก GitHub Pages
     switch (action) {
       case "getAgencies":
         result = getAgencies();
@@ -52,7 +51,7 @@ function doPost(e) {
 }
 
 // ==========================================
-// ฟังก์ชันระบบล็อกอิน & ยืนยันตัวตน (AUTH LOGIC)
+// AUTH LOGIC
 // ==========================================
 
 function registerUser(agency, email, phone, fullname) {
@@ -193,7 +192,7 @@ function verifyOTP(email, userOtp) {
 }
 
 // ==========================================
-// ฟังก์ชันดึง/บันทึกข้อมูลแบบประเมิน
+// OPTIMIZED DATA MANAGEMENT (FAST SPEED)
 // ==========================================
 
 function getIndexPage() {
@@ -206,12 +205,13 @@ function getIndexPage() {
             </div>`;
   }
 }
-// ฟังก์ชันสำหรับกดรับสิทธิ์ส่งอีเมล (Run ฟังก์ชันนี้เพื่อปลดล็อกสิทธิ์)
+
 function testMailPermission() {
   const myEmail = Session.getActiveUser().getEmail();
   MailApp.sendEmail(myEmail, "ทดสอบสิทธิ์ส่งอีเมล", "ระบบสามารถส่งอีเมลได้เรียบร้อยแล้ว");
   Logger.log("ส่งอีเมลสำเร็จไปยัง: " + myEmail);
 }
+
 function getAgencies() {
   const cache = CacheService.getScriptCache();
   const cachedAgencies = cache.get("cache_agencies");
@@ -271,6 +271,7 @@ function getAllRiskCloudData() {
           i: parseInt(row[13]) || 1,
           a: parseInt(row[14]) || 1,
           impact: parseInt(row[15]) || 1,
+          status: row[16] ? row[16].toString() : 'ไม่ใช้งาน',
           isSaved: hasSaved
         });
       }
@@ -283,44 +284,62 @@ function getAllRiskCloudData() {
   }
 }
 
+// 🚀 ฟังก์ชันบันทึกข้อมูลความเร็วสูง (Batch Update)
 function saveAssessmentData(payload) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sheet = ss.getSheetByName('risk_cloud');
     if (!sheet) return { success: false, message: "ไม่พบชีต risk_cloud" };
 
+    // 1. บันทึก Log การบันทึก
     const logSheet = ss.getSheetByName('Sheet1');
-    if(logSheet) {
+    if (logSheet) {
       logSheet.appendRow([new Date(), payload.agency, payload.assessor, "อัปเดตแบบประเมินความเสี่ยง", payload.assets.length + " รายการ"]);
     }
 
-    const data = sheet.getDataRange().getValues();
-    const updates = {};
+    // 2. ดึงข้อมูลทั้งหมดในครั้งเดียว
+    const fullRange = sheet.getDataRange();
+    const data = fullRange.getValues();
     
+    // สร้าง Map สำหรับค้นหา ID ได้เร็วในระดับ O(1)
+    const updates = new Map();
     payload.assets.forEach(asset => {
-      if(asset.id) updates[asset.id.toString()] = asset;
+      if (asset.id) updates.set(asset.id.toString(), asset);
     });
 
+    let isModified = false;
+
+    // 3. แก้ไขข้อมูลใน Memory (Array) ก่อน ไม่ยิงไป Sheets ทีละบรรทัด
     for (let i = 1; i < data.length; i++) {
       const rowId = data[i][0] ? data[i][0].toString() : null;
       
-      if (rowId && updates[rowId]) {
-        const update = updates[rowId];
+      if (rowId && updates.has(rowId)) {
+        const update = updates.get(rowId);
         
-        sheet.getRange(i + 1, 4).setValue(update.resourceName); 
-        sheet.getRange(i + 1, 9).setValue(payload.assessor);    
-        sheet.getRange(i + 1, 10).setValue(update.note);        
-        sheet.getRange(i + 1, 11).setValue(update.sysType);     
-        sheet.getRange(i + 1, 12).setValue(update.pdpa ? "TRUE" : "FALSE"); 
-        sheet.getRange(i + 1, 13).setValue(update.c);          
-        sheet.getRange(i + 1, 14).setValue(update.i);          
-        sheet.getRange(i + 1, 15).setValue(update.a);          
-        sheet.getRange(i + 1, 16).setValue(update.impact);     
+        data[i][3]  = update.resourceName;                   // คอลัมน์ D
+        data[i][8]  = payload.assessor;                       // คอลัมน์ I
+        data[i][9]  = update.note;                           // คอลัมน์ J
+        data[i][10] = update.sysType;                        // คอลัมน์ K
+        data[i][11] = update.pdpa ? "TRUE" : "FALSE";         // คอลัมน์ L
+        data[i][12] = parseInt(update.c) || 1;               // คอลัมน์ M
+        data[i][13] = parseInt(update.i) || 1;               // คอลัมน์ N
+        data[i][14] = parseInt(update.a) || 1;               // คอลัมน์ O
+        data[i][15] = parseInt(update.impact) || 1;          // คอลัมน์ P
+        data[i][16] = update.status || "ไม่ใช้งาน";           // คอลัมน์ Q
+        
+        isModified = true;
       }
     }
+
+    // 4. สั่งเขียนข้อมูลกลับลง Sheets เพียงครั้งเดียวเท่านั้น (Batch Write)
+    if (isModified) {
+      fullRange.setValues(data);
+    }
     
+    // ล้าง Cache เพื่อให้ดึงข้อมูลใหม่ทันที
     CacheService.getScriptCache().remove("all_risk_cloud_data");
     return { success: true, message: "บันทึกการประเมินลงฐานข้อมูลเรียบร้อยแล้ว!" };
+
   } catch (error) {
     return { success: false, message: error.toString() };
   }
