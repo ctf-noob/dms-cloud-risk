@@ -252,9 +252,7 @@ function getAllRiskCloudData() {
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
       if(row[1]) {
-        // 🔴 ปรับการเช็ก isSaved จากค่าใน Google Sheets (คอลัมน์ที่ 17 หรือคอลัมน์ที่บันทึกสถานะ)
-        // หรือเช็กว่ามีค่าเป็น TRUE / "ใช้งาน" / "ยืนยันใช้งาน"
-        const isSavedStatus = (row[16] === true || row[16] === 'TRUE' || row[16] === 'ใช้งาน');
+        const hasSaved = (row[8] && row[8].toString().trim() !== "") || (row[10] && row[10].toString().trim() !== "");
 
         assets.push({
           id: row[0] ? row[0].toString() : '',
@@ -273,7 +271,7 @@ function getAllRiskCloudData() {
           i: parseInt(row[13]) || 1,
           a: parseInt(row[14]) || 1,
           impact: parseInt(row[15]) || 1,
-          isSaved: isSavedStatus // 🔴 ส่งค่าสถานะตามจริงกลับไปที่หน้าเว็บ
+          isSaved: hasSaved
         });
       }
     }
@@ -318,8 +316,6 @@ function saveAssessmentData(payload) {
         sheet.getRange(i + 1, 14).setValue(update.i);          
         sheet.getRange(i + 1, 15).setValue(update.a);          
         sheet.getRange(i + 1, 16).setValue(update.impact);     
-        // 🔴 บันทึกสถานะ Checkbox ลงในคอลัมน์ที่ 17 (คอลัมน์ Q)
-        sheet.getRange(i + 1, 17).setValue(update.isActive ? "TRUE" : "FALSE"); 
       }
     }
     

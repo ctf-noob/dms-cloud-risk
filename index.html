@@ -685,7 +685,7 @@
                     ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Domain</span>`
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
-                // 🔴 เช็กสถานะสวิตช์ใช้งานจริง
+// 🔴 เช็กสถานะสวิตช์ใช้งานจริง
                 const isItemActive = (item.isActive === true || item.isActive === 'TRUE' || item.isActive === 'true');
                 
                 const statusBadge = isItemActive 
@@ -801,21 +801,17 @@
             updateCardDashboard();
         }
 
-        // 🔴 ปรับฟังก์ชันเปลี่ยนป้ายสถานะทันทีเมื่อสวิตช์
         function toggleRowActive(cb, shouldUpdateDash = true) {
             const row = cb.closest('tr');
             const isActive = cb.checked;
             const elements = row.querySelectorAll('input:not(.active-cb), select');
-            const statusCell = row.querySelector('.status-cell');
 
             if (isActive) {
                 row.classList.remove('row-disabled');
                 elements.forEach(el => el.disabled = false);
-                statusCell.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-circle mr-1"></i>ยืนยันใช้งาน</span>`;
             } else {
                 row.classList.add('row-disabled');
                 elements.forEach(el => el.disabled = true);
-                statusCell.innerHTML = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-circle-xmark mr-1"></i>ไม่ใช้งาน</span>`;
             }
 
             const allCbs = Array.from(document.querySelectorAll('#mainTableBody .active-cb'));
