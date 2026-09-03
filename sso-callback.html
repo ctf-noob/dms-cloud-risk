@@ -81,8 +81,12 @@
           const user = res.data.user;
           
           // 5. บันทึก Session ข้อมูลผู้ใช้ลงในเบราว์เซอร์
+          sessionStorage.setItem('mfa_agency', user.agency || "DMS SSO");
           sessionStorage.setItem('mfa_email', user.email || user.cid);
           sessionStorage.setItem('mfa_name', user.fullname);
+          
+          // 🟢 เพิ่มการเก็บบันทึก CID (เลขบัตรประชาชน) ไว้ในระบบ
+          sessionStorage.setItem('mfa_cid', user.cid);
           
           document.getElementById('statusMessage').textContent = "ยืนยันตัวตนสำเร็จ กำลังนำท่านเข้าสู่ระบบ...";
           

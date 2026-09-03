@@ -5,7 +5,7 @@ const SSO_CONFIG = {
   authority: "https://sso.dms.go.th/keycloak/realms/dms/protocol/openid-connect/",
   profileUrl: "https://sso.dms.go.th/dms-sso-api/api/Authen/Verify/Profile",
   clientId: "dmscloudmanagement",
-  clientSecret: "ใส่_CLIENT_SECRET_ที่ได้จากทีม_SSO_ตรงนี้", // 🔒 ใส่ Client Secret จริง
+  clientSecret: "KVKie79UafxveaeiW3J2iRCs7ablLCcY", // 🔒 ใส่ Client Secret จริง
   redirectUri: "https://cloud.dms.go.th/sso-callback.html"
 };
 
