@@ -742,6 +742,8 @@
             document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
                 if(row.querySelector('.pdpa-cb')) updateImpact(row.querySelector('.pdpa-cb'), false);
             });
+            const masterCb = document.getElementById('selectAllCb');
+            if (masterCb) masterCb.checked = false;
         }
 
         function sortTable(column) {
@@ -767,14 +769,20 @@
             applyFilterAndPagination();
         }
 
-        function toggleSelectAll(masterCb) {
-            const isChecked = masterCb.checked;
-            document.querySelectorAll('#mainTableBody .active-cb').forEach(cb => {
-                cb.checked = isChecked;
-                toggleRowActive(cb, false);
-            });
-            updateCardDashboard();
-        }
+          function toggleSelectAll(masterCb) {
+              const isChecked = masterCb.checked;
+              // เลือก/ยกเลิก เฉพาะแถวที่กำลังแสดงผลอยู่ตามการค้นหาหรือ Pagination
+              document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
+                  if (row.style.display !== 'none') {
+                      const cb = row.querySelector('.active-cb');
+                      if (cb) {
+                          cb.checked = isChecked;
+                          toggleRowActive(cb, false);
+                      }
+                  }
+              });
+              updateCardDashboard();
+          }
 
         function toggleRowActive(cb, shouldUpdateDash = true) {
             const row = cb.closest('tr');
