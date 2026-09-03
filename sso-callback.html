@@ -1,11 +1,112 @@
-<div class="center-screen" style="min-height: 100vh">
-  <div class="form-container" style="width: 100%; max-width: 420px; text-align: center">
-    <h2>DMS SSO</h2>
-    @if (failed()) {
-    <p class="alert">{{ message() }}</p>
-    <a href="/app/login">กลับไปหน้าเข้าสู่ระบบ</a>
-    } @else {
-    <p>{{ message() }}</p>
-    }
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กำลังเข้าสู่ระบบผ่าน DMS SSO...</title>
+  
+  <link rel="icon" type="image/x-icon" href="img/ico_logo@2x.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    body { font-family: 'Noto Sans Thai', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center space-y-4 border-t-4 border-[#122e5a]">
+    
+    <!-- Loading / Error Icon -->
+    <div id="iconContainer">
+      <i id="loadingIcon" class="fa-solid fa-circle-notch fa-spin text-5xl text-[#122e5a]"></i>
+    </div>
+
+    <!-- Title & Status Message -->
+    <h2 id="statusTitle" class="text-xl font-bold text-slate-800">DMS SSO</h2>
+    <p id="statusMessage" class="text-sm text-slate-600 leading-relaxed">กำลังยืนยันตัวตนผ่าน DMS SSO...</p>
+
+    <!-- Error Action Button (แสดงเฉพาะตอนเกิดข้อผิดพลาด) -->
+    <div id="errorAction" class="hidden pt-2">
+      <a href="auth.html" class="inline-block bg-[#122e5a] text-white text-xs font-bold py-2.5 px-5 rounded-lg hover:bg-blue-900 transition">
+        <i class="fa-solid fa-arrow-left mr-1.5"></i> กลับไปหน้าเข้าสู่ระบบ
+      </a>
+    </div>
+
   </div>
-</div>
+
+  <script>
+    // 🔴 Web App URL ของ Google Apps Script
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzrqDibi-z2ejZbLG76WU8Ga3-qdQDILykwgmF7BMxscFF6Sx1_Odw8sx4sKr_cUHVh/exec";
+
+    document.addEventListener("DOMContentLoaded", async function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const savedState = sessionStorage.getItem('sso_state');
+
+      // 1. เช็กกรณี DMS SSO ปฏิเสธการล็อกอิน
+      if (urlParams.get('error')) {
+        showError("DMS SSO ปฏิเสธการเข้าสู่ระบบ หรือยกเลิกการทำรายการ");
+        return;
+      }
+
+      // 2. เช็กว่ามี Code ส่งมาหรือไม่
+      if (!code) {
+        showError("ไม่พบรหัสยืนยันตัวตน (Authorization Code)");
+        return;
+      }
+
+      // 3. เช็กค่า State เพื่อป้องกัน CSRF Attack
+      if (savedState && state !== savedState) {
+        showError("คำขอเข้าสู่ระบบไม่ถูกต้อง (State Mismatch)");
+        return;
+      }
+
+      try {
+        // 4. ส่ง Code ไปให้ Google Apps Script แลก Token และ Profile
+        const response = await fetch(BACKEND_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'handleSsoCallback',
+            payload: { code: code }
+          })
+        });
+        
+        const res = await response.json();
+
+        if (res && res.success && res.data && res.data.success) {
+          const user = res.data.user;
+          
+          // 5. บันทึก Session ข้อมูลผู้ใช้ลงในเบราว์เซอร์
+          sessionStorage.setItem('mfa_email', user.email || user.cid);
+          sessionStorage.setItem('mfa_name', user.fullname);
+          
+          document.getElementById('statusMessage').textContent = "ยืนยันตัวตนสำเร็จ กำลังนำท่านเข้าสู่ระบบ...";
+          
+          // 6. เปลี่ยนหน้าไปยัง index.html
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 1000);
+
+        } else {
+          showError(res.data ? res.data.message : "ไม่สามารถเข้าสู่ระบบผ่าน DMS SSO ได้");
+        }
+
+      } catch (err) {
+        showError("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: " + err.toString());
+      }
+    });
+
+    function showError(msg) {
+      document.getElementById('loadingIcon').className = "fa-solid fa-circle-xmark text-5xl text-rose-500";
+      document.getElementById('statusTitle').textContent = "เข้าสู่ระบบไม่สำเร็จ";
+      document.getElementById('statusMessage').textContent = msg;
+      document.getElementById('statusMessage').className = "text-sm text-rose-600 font-medium leading-relaxed";
+      document.getElementById('errorAction').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

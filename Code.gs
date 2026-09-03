@@ -4,9 +4,9 @@
 const SSO_CONFIG = {
   authority: "https://sso.dms.go.th/keycloak/realms/dms/protocol/openid-connect/",
   profileUrl: "https://sso.dms.go.th/dms-sso-api/api/Authen/Verify/Profile",
-  clientId: "dmscloudmanagement", // 🔒 ใส่ Client ID ที่ได้รับจากทีม SSO
-  clientSecret: "KVKie79UafxveaeiW3J2iRCs7ablLCcY", // 🔒 ใส่ Client Authenticator / Secret
-  redirectUri: "https://cloud.dms.go.th/sso-callback.html" // 📍 Redirect URI ที่ลงทะเบียนไว้
+  clientId: "dmscloudmanagement",
+  clientSecret: "ใส่_CLIENT_SECRET_ที่ได้จากทีม_SSO_ตรงนี้", // 🔒 ใส่ Client Secret จริง
+  redirectUri: "https://cloud.dms.go.th/sso-callback.html"
 };
 
 // 1. ฟังก์ชันรองรับการเช็กสถานะการเชื่อมต่อ (GET)
@@ -49,7 +49,7 @@ function doPost(e) {
         result = getIndexPage();
         break;
         
-      // 🟢 เพิ่ม Action สำหรับ DMS SSO
+      // 🟢 Action สำหรับ DMS SSO
       case "getSsoLoginUrl":
         result = getSsoLoginUrl();
         break;
@@ -139,13 +139,18 @@ function handleSsoCallback(code) {
       const cid = user.cid || user.citizenId || user.personalId || '';
       const fname = user.firstName || user.firstname || user.givenName || '';
       const lname = user.lastName || user.lastname || user.familyName || '';
-      
+      const fullname = (fname + " " + lname).trim() || user.username || "ผู้ใช้งาน DMS SSO";
+      const email = user.email || user.mail || cid;
+
+      // 🟢 บันทึกข้อมูล CID, FullName, Email ลงฐานข้อมูล UserDB
+      saveSsoUserToSheet(cid, fullname, email);
+
       return {
         success: true,
         user: {
           cid: cid,
-          fullname: (fname + " " + lname).trim() || user.username || "ผู้ใช้งาน DMS SSO",
-          email: user.email || user.mail || cid
+          fullname: fullname,
+          email: email
         }
       };
     } else {
@@ -154,6 +159,51 @@ function handleSsoCallback(code) {
 
   } catch (error) {
     return { success: false, message: error.toString() };
+  }
+}
+
+// 🟢 ฟังก์ชันบันทึกข้อมูลผู้ใช้งานที่ล็อกอินผ่าน SSO ลงแผ่นงาน UserDB
+function saveSsoUserToSheet(cid, fullname, email) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName('UserDB');
+    
+    if (!sheet) {
+      sheet = ss.insertSheet('UserDB');
+      sheet.appendRow(['Agency', 'Email', 'Phone/CID', 'FullName', 'LastLogin', 'IsActive']);
+    }
+
+    const data = sheet.getDataRange().getValues();
+    let userFound = false;
+
+    // ค้นหาผู้ใช้งานจาก Email หรือ CID ใน UserDB
+    for (let i = 1; i < data.length; i++) {
+      const dbEmail = data[i][1] ? data[i][1].toString() : '';
+      const dbCid = data[i][2] ? data[i][2].toString().replace(/^'/, '') : '';
+
+      if ((email && dbEmail === email) || (cid && dbCid === cid.toString())) {
+        sheet.getRange(i + 1, 3).setValue("'" + cid);
+        sheet.getRange(i + 1, 4).setValue(fullname);
+        sheet.getRange(i + 1, 5).setValue(new Date()); // อัปเดตเวลาเข้าใช้งานล่าสุด
+        sheet.getRange(i + 1, 6).setValue(true);      // เปิดใช้งานอัตโนมัติสำหรับ SSO
+        userFound = true;
+        break;
+      }
+    }
+
+    // หากยังไม่มีในระบบ ให้บันทึกเป็นผู้ใช้งานใหม่
+    if (!userFound) {
+      sheet.appendRow(['DMS SSO', email, "'" + cid, fullname, new Date(), true]);
+    }
+
+    // บันทึกการเข้าใช้งานลงในแผ่นงาน Log
+    const logSheet = ss.getSheetByName('Log');
+    if (logSheet) {
+      logSheet.appendRow([new Date(), 'DMS SSO', email, cid, "SUCCESS (เข้าสู่ระบบผ่าน SSO)"]);
+    }
+
+  } catch (err) {
+    Logger.log("Error in saveSsoUserToSheet: " + err.toString());
   }
 }
 
