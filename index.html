@@ -1088,16 +1088,15 @@
             XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-       // 🔴 ปรับส่งค่าทุกลิสต์ไปบันทึก (ทั้ง Active และ Inactive)
+        // 3. ปรับการบันทึกข้อมูลผ่าน fetch
         async function submitToDatabase() {
             const payloadData = [];
             document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
                 const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
                 const id = row.getAttribute('data-id');
-                if(id) {
+                if(id && isActive) {
                     payloadData.push({
                         id: id,
-                        isActive: isActive, // 🔴 ส่งสถานะการติ๊กไปบันทึกที่ backend
                         resourceName: row.querySelector('.name-input').value,
                         sysType: row.querySelector('.type-select').value,
                         note: row.querySelector('.note-input').value,
@@ -1111,7 +1110,7 @@
             });
 
             if(payloadData.length === 0) {
-                alert("ไม่พบข้อมูลเพื่อทำการบันทึก");
+                alert("โปรดเลือกอย่างน้อย 1 รายการเพื่อบันทึก");
                 return;
             }
 
