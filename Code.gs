@@ -271,6 +271,7 @@ function getAllRiskCloudData() {
           i: parseInt(row[13]) || 1,
           a: parseInt(row[14]) || 1,
           impact: parseInt(row[15]) || 1,
+          status: row[16] ? row[16].toString() : 'ไม่ใช้งาน',
           isSaved: hasSaved
         });
       }
@@ -315,7 +316,8 @@ function saveAssessmentData(payload) {
         sheet.getRange(i + 1, 13).setValue(update.c);          
         sheet.getRange(i + 1, 14).setValue(update.i);          
         sheet.getRange(i + 1, 15).setValue(update.a);          
-        sheet.getRange(i + 1, 16).setValue(update.impact);     
+        sheet.getRange(i + 1, 16).setValue(update.impact);
+        sheet.getRange(i + 1, 17).setValue(update.status);     
       }
     }
     
