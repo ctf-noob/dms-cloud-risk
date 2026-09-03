@@ -328,9 +328,7 @@ function saveAssessmentData(payload) {
         data[i][13] = parseInt(update.i) || 1;               // คอลัมน์ N
         data[i][14] = parseInt(update.a) || 1;               // คอลัมน์ O
         data[i][15] = parseInt(update.impact) || 1;          // คอลัมน์ P
-        data[i][16] = (update.status && update.status.toString().trim() !== "") 
-                ? update.status.toString().trim() 
-                : "ไม่ใช้งาน";
+        data[i][16] = update.status || "ไม่ใช้งาน";           // คอลัมน์ Q
         
         isModified = true;
       }
