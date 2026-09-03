@@ -1110,60 +1110,68 @@
             XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-              async function submitToDatabase() {
-                  const payloadData = [];
-                  
-                  document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
-                      const id = row.getAttribute('data-id');
-                      const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-                      const statusSelect = row.querySelector('.status-select');
-                      
-                      // 🟢 ดึงค่าจาก Dropdown โดยตรง (ถ้าหาไม่เจอให้เช็กจาก Checkbox เป็นสำรอง)
-                      const currentStatus = statusSelect ? statusSelect.value : (isActive ? "ยืนยันใช้งาน" : "ไม่ใช้งาน");
-                      
-                      // 🟢 บันทึกทุกแถวที่มี ID เพื่ออัปเดตสถานะ (ทั้ง "ยืนยันใช้งาน" และ "ไม่ใช้งาน") ลงฐานข้อมูล
-                      if (id) {
-                          payloadData.push({
-                              id: id,
-                              resourceName: row.querySelector('.name-input') ? row.querySelector('.name-input').value : '',
-                              sysType: row.querySelector('.type-select') ? row.querySelector('.type-select').value : '',
-                              note: row.querySelector('.note-input') ? row.querySelector('.note-input').value : '',
-                              pdpa: row.querySelector('.pdpa-cb') ? row.querySelector('.pdpa-cb').checked : false,
-                              c: row.querySelector('.c-select') ? row.querySelector('.c-select').value : 1,
-                              i: row.querySelector('.i-select') ? row.querySelector('.i-select').value : 1,
-                              a: row.querySelector('.a-select') ? row.querySelector('.a-select').value : 1,
-                              impact: parseInt(row.querySelector('.impact-badge') ? row.querySelector('.impact-badge').textContent : 1),
-                              
-                              // 🟢 ใช้ค่าสถานะจริงจาก Dropdown
-                              status: currentStatus 
-                          });
-                      }
-                  });
+async function submitToDatabase() {
+    const payloadData = [];
+    
+    document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
+        const id = row.getAttribute('data-id');
+        if (!id) return;
 
-                  if (payloadData.length === 0) {
-                      alert("ไม่พบข้อมูลรายการระบบสารสนเทศเพื่อบันทึก");
-                      return;
-                  }
+        const activeCb = row.querySelector('.active-cb');
+        const isActive = activeCb ? activeCb.checked : false;
+        
+        const statusSelect = row.querySelector('.status-select');
+        // ดึงสถานะจริง หากไม่มีให้ดูจาก checkbox
+        const currentStatus = statusSelect ? statusSelect.value : (isActive ? "ยืนยันใช้งาน" : "ไม่ใช้งาน");
+        
+        // ดึงค่า Element พร้อม Fallback ป้องกัน Crash
+        const nameEl = row.querySelector('.name-input');
+        const sysTypeEl = row.querySelector('.type-select');
+        const noteEl = row.querySelector('.note-input');
+        const pdpaEl = row.querySelector('.pdpa-cb');
+        const cEl = row.querySelector('.c-select');
+        const iEl = row.querySelector('.i-select');
+        const aEl = row.querySelector('.a-select');
+        const impactEl = row.querySelector('.impact-badge');
 
-                  const btn = document.getElementById('btnSaveFinal');
-                  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
-                  btn.disabled = true;
+        payloadData.push({
+            id: id,
+            resourceName: nameEl ? nameEl.value : '',
+            sysType: sysTypeEl ? sysTypeEl.value : 'ระบบบริการ (Web Services)',
+            note: noteEl ? noteEl.value : '',
+            pdpa: pdpaEl ? pdpaEl.checked : false,
+            c: cEl ? parseInt(cEl.value) || 1 : 1,
+            i: iEl ? parseInt(iEl.value) || 1 : 1,
+            a: aEl ? parseInt(aEl.value) || 1 : 1,
+            impact: impactEl ? parseInt(impactEl.textContent) || 1 : 1,
+            status: currentStatus // ส่ง "ยืนยันใช้งาน" หรือ "ไม่ใช้งาน" เสมอ (ห้ามส่ง null/undefined)
+        });
+    });
 
-                  const res = await callBackend("saveAssessmentData", { 
-                      agency: userAgency, 
-                      assessor: userName, 
-                      assets: payloadData 
-                  });
+    if (payloadData.length === 0) {
+        alert("ไม่พบข้อมูลรายการระบบสารสนเทศเพื่อบันทึก");
+        return;
+    }
 
-                  if (res && res.success) {
-                      document.getElementById('successPopup').classList.remove('hidden');
-                  } else {
-                      alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
-                  }
-                  
-                  btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
-                  btn.disabled = false;
-              }
+    const btn = document.getElementById('btnSaveFinal');
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
+    btn.disabled = true;
+
+    const res = await callBackend("saveAssessmentData", { 
+        agency: userAgency, 
+        assessor: userName, 
+        assets: payloadData 
+    });
+
+    if (res && res.success) {
+        document.getElementById('successPopup').classList.remove('hidden');
+    } else {
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
+    }
+    
+    btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
+    btn.disabled = false;
+}
     </script>
 </body>
 </html>
