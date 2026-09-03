@@ -584,7 +584,7 @@
             
             // เช็กว่าล็อกอินหรือยัง ถ้ายังให้เตะกลับหน้า Auth.html
             if (!userAgency || !userName) {
-                window.location.href = "Auth.html";
+                window.location.href = "auth.html";
                 return;
             }
 
@@ -596,7 +596,7 @@
 
         function logout() {
             sessionStorage.clear();
-            window.location.href = "Auth.html";
+            window.location.href = "auth.html";
         }
 
         // 2. ปรับการดึงข้อมูล Cloud ผ่าน fetch

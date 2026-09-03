@@ -198,7 +198,7 @@ function verifyOTP(email, userOtp) {
 
 function getIndexPage() {
   try {
-    return HtmlService.createHtmlOutputFromFile('Index').getContent();
+    return HtmlService.createHtmlOutputFromFile('index').getContent();
   } catch (error) {
     return `<div style="text-align:center; padding: 50px;">
               <h2 style="color: red;">เกิดข้อผิดพลาดในการโหลดหน้าเว็บ</h2>

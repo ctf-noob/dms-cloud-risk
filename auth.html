@@ -226,7 +226,7 @@
       const savedAgency = sessionStorage.getItem('mfa_agency');
       const savedName = sessionStorage.getItem('mfa_name');
       if (savedAgency && savedName) {
-        window.location.href = "Index.html";
+        window.location.href = "index.html";
       }
     });
 
@@ -352,7 +352,7 @@
         
         // สลับไปหน้า Index.html บน GitHub Pages
         setTimeout(() => {
-          window.location.href = "Index.html";
+          window.location.href = "index.html";
         }, 800);
       } else {
         err.innerText = res.message; err.classList.remove('hidden');
