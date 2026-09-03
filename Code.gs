@@ -1,11 +1,17 @@
 // ==========================================
 // CONFIGURATION
 // ==========================================
+// ดึงค่า Secret จาก Project Settings (ตั้งค่าโปรเจกต์ > คุณสมบัติของสคริปต์)
+const scriptProps = PropertiesService.getScriptProperties();
+
 const SSO_CONFIG = {
   authority: "https://sso.dms.go.th/keycloak/realms/dms/protocol/openid-connect/",
   profileUrl: "https://sso.dms.go.th/dms-sso-api/api/Authen/Verify/Profile",
-  clientId: "dmscloudmanagement",
-  clientSecret: "KVKie79UafxveaeiW3J2iRCs7ablLCcY", // 🔒 ใส่ Client Secret จริง
+  
+  // 🟢 ดึงค่าจากตัวแปรที่ซ่อนไว้ (ไม่ฮาร์ดโค้ดในนี้แล้ว)
+  clientId: scriptProps.getProperty("CLIENT_ID"),
+  clientSecret: scriptProps.getProperty("CLIENT_SECRET"), 
+  
   redirectUri: "https://cloud.dms.go.th/sso-callback.html"
 };
 
