@@ -837,21 +837,30 @@
               updateCardDashboard();
           }
 
-        function toggleRowActive(cb, shouldUpdateDash = true) {
-            const row = cb.closest('tr');
-            const isActive = cb.checked;
-            const elements = row.querySelectorAll('input:not(.active-cb), select');
+          function toggleRowActive(cb, shouldUpdateDash = true) {
+              const row = cb.closest('tr');
+              const isActive = cb.checked;
+              const elements = row.querySelectorAll('input:not(.active-cb), select:not(.status-select)');
+              const statusSelect = row.querySelector('.status-select');
 
-            if (isActive) {
-                row.classList.remove('row-disabled');
-                elements.forEach(el => el.disabled = false);
-            } else {
-                row.classList.add('row-disabled');
-                elements.forEach(el => el.disabled = true);
-            }
+              if (isActive) {
+                  row.classList.remove('row-disabled');
+                  elements.forEach(el => el.disabled = false);
+                  if (statusSelect) {
+                      statusSelect.value = "ยืนยันใช้งาน";
+                      statusSelect.className = "status-select px-1.5 py-1 text-[11px] font-bold rounded border transition focus:outline-none cursor-pointer bg-emerald-100 text-emerald-800 border-emerald-300";
+                  }
+              } else {
+                  row.classList.add('row-disabled');
+                  elements.forEach(el => el.disabled = true);
+                  if (statusSelect) {
+                      statusSelect.value = "ไม่ใช้งาน";
+                      statusSelect.className = "status-select px-1.5 py-1 text-[11px] font-bold rounded border transition focus:outline-none cursor-pointer bg-amber-100 text-amber-800 border-amber-300";
+                  }
+              }
 
-            if(shouldUpdateDash) updateCardDashboard();
-        }
+              if (shouldUpdateDash) updateCardDashboard();
+          }
 
         function updateImpact(elem, shouldUpdateDash = true) {
             const row = elem.closest('tr');
@@ -1101,48 +1110,60 @@
             XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        async function submitToDatabase() {
-    const payloadData = [];
-    document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
-        const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-        const id = row.getAttribute('data-id');
-        
-        // 🟢 ปรับเงื่อนไข: บันทึกเฉพาะแถวที่มี ID และถูกกด "ยืนยันใช้งาน (isActive === true)" เท่านั้น
-        if (id && isActive) {
-            payloadData.push({
-                id: id,
-                resourceName: row.querySelector('.name-input').value,
-                sysType: row.querySelector('.type-select').value,
-                note: row.querySelector('.note-input').value,
-                pdpa: row.querySelector('.pdpa-cb').checked,
-                c: row.querySelector('.c-select').value,
-                i: row.querySelector('.i-select').value,
-                a: row.querySelector('.a-select').value,
-                impact: parseInt(row.querySelector('.impact-badge').textContent),
-                status: "ยืนยันใช้งาน"
-            });
-        }
-    });
+              async function submitToDatabase() {
+                  const payloadData = [];
+                  
+                  document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
+                      const id = row.getAttribute('data-id');
+                      const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
+                      const statusSelect = row.querySelector('.status-select');
+                      
+                      // 🟢 ดึงค่าจาก Dropdown โดยตรง (ถ้าหาไม่เจอให้เช็กจาก Checkbox เป็นสำรอง)
+                      const currentStatus = statusSelect ? statusSelect.value : (isActive ? "ยืนยันใช้งาน" : "ไม่ใช้งาน");
+                      
+                      // 🟢 บันทึกทุกแถวที่มี ID เพื่ออัปเดตสถานะ (ทั้ง "ยืนยันใช้งาน" และ "ไม่ใช้งาน") ลงฐานข้อมูล
+                      if (id) {
+                          payloadData.push({
+                              id: id,
+                              resourceName: row.querySelector('.name-input') ? row.querySelector('.name-input').value : '',
+                              sysType: row.querySelector('.type-select') ? row.querySelector('.type-select').value : '',
+                              note: row.querySelector('.note-input') ? row.querySelector('.note-input').value : '',
+                              pdpa: row.querySelector('.pdpa-cb') ? row.querySelector('.pdpa-cb').checked : false,
+                              c: row.querySelector('.c-select') ? row.querySelector('.c-select').value : 1,
+                              i: row.querySelector('.i-select') ? row.querySelector('.i-select').value : 1,
+                              a: row.querySelector('.a-select') ? row.querySelector('.a-select').value : 1,
+                              impact: parseInt(row.querySelector('.impact-badge') ? row.querySelector('.impact-badge').textContent : 1),
+                              
+                              // 🟢 ใช้ค่าสถานะจริงจาก Dropdown
+                              status: currentStatus 
+                          });
+                      }
+                  });
 
-    if (payloadData.length === 0) {
-        alert("โปรดเลือกอย่างน้อย 1 รายการที่ต้องการยืนยันใช้งานเพื่อบันทึก");
-        return;
-    }
+                  if (payloadData.length === 0) {
+                      alert("ไม่พบข้อมูลรายการระบบสารสนเทศเพื่อบันทึก");
+                      return;
+                  }
 
-    const btn = document.getElementById('btnSaveFinal');
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
-    btn.disabled = true;
+                  const btn = document.getElementById('btnSaveFinal');
+                  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
+                  btn.disabled = true;
 
-    const res = await callBackend("saveAssessmentData", { agency: userAgency, assessor: userName, assets: payloadData });
+                  const res = await callBackend("saveAssessmentData", { 
+                      agency: userAgency, 
+                      assessor: userName, 
+                      assets: payloadData 
+                  });
 
-    if (res && res.success) {
-        document.getElementById('successPopup').classList.remove('hidden');
-    } else {
-        alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
-    }
-    btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
-    btn.disabled = false;
-}
+                  if (res && res.success) {
+                      document.getElementById('successPopup').classList.remove('hidden');
+                  } else {
+                      alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
+                  }
+                  
+                  btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
+                  btn.disabled = false;
+              }
     </script>
 </body>
 </html>
