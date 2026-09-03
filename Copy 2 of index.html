@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบประเมินความเสี่ยงคลาวด์ - DMS Cloud Risk</title>
+    <title>ระบบประเมินความเสี่ยงคลาวด์</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,21 +20,21 @@
 </head>
 <body class="relative min-h-screen pb-10">
 
-    <!-- Loading Overlay -->
     <div id="loadingOverlay" class="fixed inset-0 bg-slate-50/90 z-50 flex flex-col items-center justify-center transition-opacity duration-300">
         <i class="fa-solid fa-circle-notch fa-spin text-4xl text-[#122e5a] mb-4"></i>
         <h2 class="text-lg font-bold text-slate-800">กำลังโหลดข้อมูล...</h2>
     </div>
 
-    <!-- Header / Navbar -->
     <div class="bg-theme text-white py-4 px-6 shadow-lg flex justify-between items-center sticky top-0 z-40 transition-colors">
         <div>
             <h1 class="text-lg md:text-xl font-bold">DMS Cloud Risk & Asset Management</h1>
         </div>
         <div class="hidden md:flex items-center gap-4 bg-black/20 rounded-full px-4 py-2">
-            <a href="docs/manual.pdf" target="_blank" class="flex items-center text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded transition">
+            <a href="https://drive.google.com/file/d/1cETQstibceL6enlqHDsPPj8030r0i8mu/view?usp=sharing" target="_blank" class="flex items-center text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded transition">
                 <i class="fa-solid fa-book mr-2"></i> คู่มือ
             </a> 
+            <!--<a href="docs/manual.pdf" target="_blank" class="flex items-center text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded transition">
+            <i class="fa-solid fa-book mr-2"></i> คู่มือ</a>-->
             <span class="text-slate-400">|</span>
             <div class="flex items-center"><i class="fa-solid fa-user text-sm mr-2"></i><span id="profileName" class="text-sm font-medium">ผู้ใช้งาน</span></div>
             <span class="text-slate-400">|</span>
@@ -48,7 +48,6 @@
 
     <div class="max-w-full mx-auto space-y-6 p-4 md:p-8">
 
-        <!-- Dashboard Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
                 <div class="flex justify-between items-start">
@@ -78,7 +77,7 @@
                 </div>
                 <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs font-semibold">
                     <span class="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">✅ ใช้งาน: <span id="cardActiveSub">0</span></span>
-                    <span class="text-slate-500 bg-slate-100 px-2 py-0.5 rounded">❌ไม่ใช้งาน: <span id="cardInactive">0</span></span>
+                    <span class="text-slate-500 bg-slate-100 px-2 py-0.5 rounded">❌ ไม่ใช้งาน: <span id="cardInactive">0</span></span>
                 </div>
             </div>
 
@@ -117,7 +116,6 @@
             </div>
         </div>
 
-        <!-- STEP 1: MAIN TABLE -->
         <div id="step1" class="space-y-4">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
@@ -248,7 +246,6 @@
             </div>
         </div>
 
-        <!-- STEP 2: SUMMARY TABLE -->
         <div id="step2" class="space-y-4 hidden">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                 <div class="flex flex-col md:flex-row justify-between md:items-center mb-4 gap-4">
@@ -288,7 +285,7 @@
                                     </div>
                                 </th>
                                 <th rowspan="2" class="py-3 px-2 w-8 border-r border-slate-700">#</th>
-                                <th rowspan="2" class="py-3 px-2 min-w-[110px] border-r border-slate-700">สถานะ</th>
+                                <th rowspan="2" class="py-3 px-2 min-w-[90px] border-r border-slate-700">สถานะ</th>
                                 <th rowspan="2" class="py-3 px-3 min-w-[130px] border-r border-slate-700">ผู้บันทึกล่าสุด</th>
                                 <th rowspan="2" onclick="sortSummaryTable('type')" class="py-3 px-3 min-w-[90px] th-sortable border-r border-slate-700">
                                     ประเภท <i class="fa-solid fa-sort ml-1 text-slate-400"></i>
@@ -387,7 +384,6 @@
 
     </div>
 
-    <!-- Announcement Modal -->
     <div id="announcementPopup" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl w-11/12 max-w-3xl overflow-hidden flex flex-col max-h-[90vh] transform scale-100 transition-transform">
             
@@ -418,19 +414,29 @@
                     <div class="bg-white p-4 rounded-xl border border-rose-100 shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
                         <p class="font-bold text-rose-800 text-base flex items-center"><i class="fa-solid fa-key w-6 text-center mr-1"></i> 1. การบังคับเปลี่ยนรหัสผ่าน (Force Reset Password)</p>
-                        <p class="mt-2 ml-7 text-slate-600">ให้หน่วยงานแจ้งผู้ดูแลระบบดำเนินการ <strong class="text-rose-600">บังคับให้ผู้ใช้งานทุกรายทำการเปลี่ยนรหัสผ่านใหม่ทั้งหมดในทุกระดับสิทธิ์ทันที</strong> เพื่อเป็นการตัดวงจรภัยคุกคาม</p>
+                        <p class="mt-2 ml-7 text-slate-600">ให้หน่วยงานแจ้งผู้ดูแลระบบดำเนินการ <strong class="text-rose-600">บังคับให้ผู้ใช้งานทุกรายทำการเปลี่ยนรหัสผ่านใหม่ทั้งหมดในทุกระดับสิทธิ์ทันที</strong> เพื่อเป็นการตัดวงจรภัยคุกคาม และป้องกันมิให้ผู้ไม่ประสงค์ดีนำรหัสผ่านเดิมที่อาจเคยรั่วไหล กลับมาใช้ลักลอบเข้าถึงระบบสารสนเทศ</p>
                     </div>
 
                     <div class="bg-white p-4 rounded-xl border border-amber-100 shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
                         <p class="font-bold text-amber-800 text-base flex items-center"><i class="fa-solid fa-broom w-6 text-center mr-1"></i> 2. การทำความสะอาดระบบ (System Cleansing)</p>
-                        <p class="mt-2 ml-7 text-slate-600">เร่งตรวจสอบระบบสารสนเทศ หากพบ <strong class="text-amber-600">"ระบบเก่า" หรือ "ระบบร้าง"</strong> ที่ไม่มีการใช้งานแล้ว ให้ดำเนินการ <strong>ปิดการเข้าถึงในระดับโครงสร้างระบบ (Back-end) อย่างถาวร ภายใน 15 วัน</strong></p>
+                        <p class="mt-2 ml-7 text-slate-600">เร่งตรวจสอบระบบสารสนเทศ ทรัพยากรระบบ และเว็บไซต์ หากพบ <strong class="text-amber-600">"ระบบเก่า" หรือ "ระบบร้าง"</strong> ที่ไม่มีการใช้งานแล้ว ให้ดำเนินการ <strong>ปิดการเข้าถึงในระดับโครงสร้างระบบ (Back-end) อย่างถาวร ภายใน 15 วัน</strong></p>
                     </div>
 
                     <div class="bg-white p-4 rounded-xl border border-sky-100 shadow-sm relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-1 h-full bg-sky-500"></div>
                         <p class="font-bold text-sky-800 text-base flex items-center"><i class="fa-solid fa-shield-halved w-6 text-center mr-1"></i> 3. การยกระดับการยืนยันตัวตน (MFA) และการควบคุมการเข้าถึง</p>
-                        <p class="mt-2 ml-7 text-slate-600">นำระบบการยืนยันตัวตนแบบหลายปัจจัย (Multi-Factor Authentication: MFA) เช่น Digital Identity (ThaID) มาใช้</p>
+                        <p class="mt-2 ml-7 text-slate-600">นำระบบการยืนยันตัวตนแบบหลายปัจจัย (Multi-Factor Authentication: MFA) เช่น Digital Identity (ThaID) มาใช้ โดยยึดหลักเกณฑ์:</p>
+                        <ul class="mt-3 ml-7 space-y-3">
+                            <li class="bg-sky-50/50 p-2 rounded-lg border border-sky-50">
+                                <span class="font-bold text-sky-700">3.1 ระบบที่เข้าถึงผ่านอินเทอร์เน็ต:</span> 
+                                <span>ต้องบังคับใช้งานระบบ MFA ในการเข้าสู่ระบบทุกกรณี</span>
+                            </li>
+                            <li class="bg-slate-100 p-2 rounded-lg border border-slate-200">
+                                <span class="font-bold text-slate-700">3.2 ระบบที่ไม่รองรับ MFA:</span> 
+                                <span>ให้จำกัดสิทธิ์เข้าถึง <strong>เฉพาะเครือข่ายภายในหน่วยงาน (Intranet) เท่านั้น</strong> ห้ามเผยแพร่อินเทอร์เน็ตโดยเด็ดขาด จนกว่าจะรองรับ MFA</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
@@ -444,7 +450,6 @@
         </div>
     </div>
 
-    <!-- Info Modal -->
     <div id="infoModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 transform transition-all">
             <div class="bg-slate-800 px-6 py-4 flex items-center justify-between">
@@ -458,7 +463,6 @@
         </div>
     </div>
 
-    <!-- Success Popup -->
     <div id="successPopup" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl p-8 max-w-sm w-full text-center shadow-2xl">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -471,26 +475,24 @@
     </div>
 
     <script>
-        // Web App Backend URL
+        // 🔴 1. วาง URL ของ Google Apps Script ที่ Deploy ไว้ตรงนี้
         const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzrqDibi-z2ejZbLG76WU8Ga3-qdQDILykwgmF7BMxscFF6Sx1_Odw8sx4sKr_cUHVh/exec";
 
-        let userAgency = "";
-        let userEmail = "";
-        let userName = "";
         let allAssets = [];
-
-        // Dynamic State Variables
+        let userAgency = "";
+        let userName = "";
+        
         let currentPage = 1;
         let pageSize = 10;
         let sortDirection = {};
-        
-        let summaryDataList = [];
-        let filteredSummaryDataList = [];
+
         let summaryCurrentPage = 1;
         let summaryPageSize = 10;
+        let summaryDataList = [];
+        let filteredSummaryDataList = [];
         let summarySortDirection = {};
 
-        // API Fetch Wrapper
+        // ฟังก์ชันสำหรับยิง API หา Apps Script
         async function callBackend(action, payload = {}) {
             try {
                 const response = await fetch(BACKEND_URL, {
@@ -498,109 +500,71 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ action: action, payload: payload })
                 });
-                return await response.json();
+                const res = await response.json();
+                return res.success ? res.data : { success: false, message: res.message || "เกิดข้อผิดพลาด" };
             } catch (err) {
-                console.error("Backend Call Error:", err);
-                return { success: false, message: err.toString() };
+                return { success: false, message: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + err.toString() };
             }
-        }
-
-        document.addEventListener("DOMContentLoaded", async function() {
-            userAgency = sessionStorage.getItem('mfa_agency');
-            userEmail = sessionStorage.getItem('mfa_email');
-            userName = sessionStorage.getItem('mfa_name');
-
-            if (!userAgency || !userEmail) {
-                alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-                window.location.href = "auth.html";
-                return;
-            }
-
-            if (document.getElementById('profileName')) document.getElementById('profileName').textContent = userName;
-            if (document.getElementById('displayAgency')) document.getElementById('displayAgency').textContent = userAgency;
-
-            await loadDataFromCloud();
-        });
-
-        async function loadDataFromCloud() {
-            const overlay = document.getElementById('loadingOverlay');
-            if (overlay) overlay.classList.remove('hidden', 'opacity-0');
-
-            let isTimedOut = false;
-            const timeoutTimer = setTimeout(() => {
-                isTimedOut = true;
-                if (overlay) overlay.classList.add('hidden');
-                alert("การดึงข้อมูลใช้เวลานานเกินไป ระบบจะนำท่านกลับสู่หน้าเข้าสู่ระบบ");
-                sessionStorage.clear();
-                window.location.href = "auth.html";
-            }, 12000);
-
-            try {
-                const res = await callBackend("getAllRiskCloudData");
-                
-                if (isTimedOut) return;
-                clearTimeout(timeoutTimer);
-
-                if (res && res.success && Array.isArray(res.data)) {
-                    allAssets = res.data.filter(item => {
-                        return item.agency && item.agency.toString().trim() === userAgency.toString().trim();
-                    });
-
-                    renderMainTable();
-                    updateCardDashboard();
-                    applyFilterAndPagination(true);
-
-                    if (overlay) {
-                        overlay.classList.add('opacity-0');
-                        setTimeout(() => { 
-                            overlay.classList.add('hidden'); 
-                            const popup = document.getElementById('announcementPopup');
-                            if (popup) popup.classList.remove('hidden');
-                        }, 300);
-                    }
-                } else {
-                    if (overlay) overlay.classList.add('hidden');
-                    alert("ไม่พบข้อมูลสินทรัพย์ของหน่วยงานนี้ หรือระบบขัดข้อง: " + (res.message || ""));
-                }
-
-            } catch (err) {
-                if (isTimedOut) return;
-                clearTimeout(timeoutTimer);
-                if (overlay) overlay.classList.add('hidden');
-                alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.toString());
-            }
-        }
-
-        function logout() {
-            sessionStorage.clear();
-            window.location.href = "auth.html";
         }
 
         const modalInfoData = {
             pdpa: {
                 title: "คำอธิบาย: การประมวลผล PDPA",
-                content: `<p class="font-semibold text-sky-700">ทำไมต้องประเมิน PDPA?</p>
-                          <p>เพื่อระบุว่าระบบสารสนเทศนี้มีการจัดเก็บ เก็บรวบรวม ใช้ หรือเปิดเผย <strong>ข้อมูลส่วนบุคคล (Personal Data)</strong> หรือไม่</p>
-                          <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-900 mt-2">
-                              <strong>กฎการประเมิน:</strong> หากระบบมีข้อมูล PDPA ระดับผลกระทบรวม (Overall Impact) จะถูกปรับให้อย่างน้อยเป็น <strong>MEDIUM (ระดับ 2)</strong> ทันที
-                          </div>`
+                content: `
+                    <p class="font-semibold text-sky-700">ทำไมต้องประเมิน PDPA?</p>
+                    <p>เพื่อระบุว่าระบบสารสนเทศนี้มีการจัดเก็บ เก็บรวบรวม ใช้ หรือเปิดเผย <strong>ข้อมูลส่วนบุคคล (Personal Data)</strong> เช่น ชื่อ-นามสกุล, เลขบัตรประชาชน, ข้อมูลสุขภาพ (PHI), หรือข้อมูลชีวภาพ (Biometrics) หรือไม่</p>
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-900 mt-2">
+                        <strong>กฎการประเมิน:</strong> หากระบบมีข้อมูล PDPA ระดับผลกระทบรวม (Overall Impact) จะถูกปรับให้อย่างน้อยเป็น <strong>MEDIUM (ระดับ 2)</strong> ทันที เพื่อให้สอดคล้องกับมาตรการรักษาความมั่นคงปลอดภัยตามกฎหมาย PDPA
+                    </div>
+                `
             },
             cia: {
                 title: "คำอธิบาย: การประเมินผลกระทบ C-I-A",
-                content: `<p class="font-semibold text-sky-700">ทำไมต้องประเมินผลกระทบ (C-I-A)?</p>
-                          <p>การประเมินตามหลักการ CIA Triad ช่วยจัดกลุ่มและจำแนกความสำคัญของระบบสารสนเทศเพื่อกำหนดมาตรการความปลอดภัยได้อย่างเหมาะสม</p>`
+                content: `
+                    <p class="font-semibold text-sky-700">ทำไมต้องประเมินผลกระทบ (C-I-A)?</p>
+                    <p>การประเมินตามหลักการ CIA Triad ช่วยให้องค์กรสามารถจัดกลุ่มและจำแนกความสำคัญของสารสนเทศ (Data Classification) และระบบงาน เพื่อกำหนดมาตรการรักษาความปลอดภัย (Security Controls) ได้อย่างเหมาะสมกับระดับความเสี่ยง</p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs text-slate-700 mt-2">
+                        <li><strong>Confidentiality (C):</strong> ป้องกันไม่ให้ผู้ไม่มีสิทธิ์แอบดูหรือดึงข้อมูลออกไป</li>
+                        <li><strong>Integrity (I):</strong> ป้องกันไม่ให้ข้อมูลถูกแก้ไข ปลอมแปลง หรือทำลาย</li>
+                        <li><strong>Availability (A):</strong> ป้องกันไม่ให้ระบบหยุดชะงัก ล่ม หรือใช้การไม่ได้</li>
+                    </ul>
+                `
             },
             c: {
                 title: "Confidentiality (C) - การเก็บรักษาความลับ",
-                content: `<p>ประเมินความเสียหายหาก <strong>ข้อมูลเกิดการรั่วไหลสู่ภายนอก</strong></p>`
+                content: `
+                    <p class="font-semibold text-sky-700">เหตุผลในการประเมิน:</p>
+                    <p>เพื่อประเมินระดับความเสียหายหาก <strong>ข้อมูลถูกเข้าถึงโดยไม่ได้รับอนุญาต (ข้อมูลรั่วไหล)</strong></p>
+                    <div class="space-y-2 mt-3 text-xs">
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-emerald-700">1 - LOW:</strong> ข้อมูลสาธารณะ เปิดเผยได้ทั่วไป ไม่มีผลกระทบ</div>
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-amber-700">2 - MEDIUM:</strong> ข้อมูลใช้งานภายใน เสียชื่อเสียงระดับหน่วยงานหากรั่วไหล</div>
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-rose-700">3 - HIGH:</strong> ข้อมูลส่วนบุคคล/ข้อมูลสุขภาพ/ความลับขั้นสุดยอด รั่วไหลแล้วผิดกฎหมายร้ายแรง</div>
+                    </div>
+                `
             },
             i: {
                 title: "Integrity (I) - ความถูกต้องแท้จริงของข้อมูล",
-                content: `<p>ประเมินความเสียหายหาก <strong>ข้อมูลถูกแก้ไข ปลอมแปลง หรือถูกลบทำลาย</strong></p>`
+                content: `
+                    <p class="font-semibold text-sky-700">เหตุผลในการประเมิน:</p>
+                    <p>เพื่อประเมินระดับความเสียหายหาก <strong>ข้อมูลถูกดัดแปลง ปลอมแปลง หรือถูกลบทำลาย</strong> โดยไม่ถูกต้อง</p>
+                    <div class="space-y-2 mt-3 text-xs">
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-emerald-700">1 - LOW:</strong> ข้อมูลคลาดเคลื่อนเล็กน้อย แก้ไขคืนสภาพได้ทันที</div>
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-amber-700">2 - MEDIUM:</strong> ข้อมูลสำคัญถูกดัดแปลง ส่งผลกระทบต่อการตัดสินใจ แต่มี Backup ดึงคืนได้</div>
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-rose-700">3 - HIGH:</strong> ข้อมูลหลัก/ประวัติการรักษาถูกลบหรือแก้ไข ไม่สามารถกู้คืนได้ เสียหายร้ายแรง</div>
+                    </div>
+                `
             },
             a: {
                 title: "Availability (A) - ความพร้อมใช้งานของระบบ",
-                content: `<p>ประเมินความเสียหายหาก <strong>ระบบหยุดชะงัก ล่ม หรือใช้การไม่ได้</strong></p>`
+                content: `
+                    <p class="font-semibold text-sky-700">เหตุผลในการประเมิน:</p>
+                    <p>เพื่อประเมินระดับความเสียหายหาก <strong>ระบบล่ม ปิดบริการ หรือถูกโจมตี (DoS/Ransomware)</strong> จนใช้งานไม่ได้</p>
+                    <div class="space-y-2 mt-3 text-xs">
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-emerald-700">1 - LOW:</strong> ระบบหยุดชะงักชั่วคราว ไม่กระทบการทำงานหลักขององค์กร</div>
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-amber-700">2 - MEDIUM:</strong> ระบบล่มหลายชั่วโมง ทำให้งานล่าช้า แต่ยังมีกระบวนการทำงานทดแทน (Manual)</div>
+                        <div class="p-2 rounded bg-slate-100"><strong class="text-rose-700">3 - HIGH:</strong> ระบบล่มถาวรหรือเป็นระบบ 24/7 ที่ให้บริการวิกฤต ส่งผลกระทบวงกว้างในทันที</div>
+                    </div>
+                `
             }
         };
 
@@ -613,7 +577,54 @@
             }
         }
         function closeModal() { document.getElementById('infoModal').classList.add('hidden'); }
-        function closeAnnouncement() { document.getElementById('announcementPopup').classList.add('hidden'); }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            userAgency = sessionStorage.getItem('mfa_agency');
+            userName = sessionStorage.getItem('mfa_name');
+            
+            // เช็กว่าล็อกอินหรือยัง ถ้ายังให้เตะกลับหน้า Auth.html
+            if (!userAgency || !userName) {
+                window.location.href = "auth.html";
+                return;
+            }
+
+            document.getElementById('displayAgency').innerText = userAgency;
+            document.getElementById('profileName').innerText = userName;
+
+            loadDataFromCloud();
+        });
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = "auth.html";
+        }
+
+        // 2. ปรับการดึงข้อมูล Cloud ผ่าน fetch
+        async function loadDataFromCloud() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingOverlay').classList.remove('opacity-0');
+            
+            const response = await callBackend("getAllRiskCloudData");
+            if (Array.isArray(response)) {
+                allAssets = response.filter(item => item.agency === userAgency);
+                renderMainTable();
+                updateCardDashboard();
+                applyFilterAndPagination(true);
+            } else {
+                alert("เกิดข้อผิดพลาดในการโหลดข้อมูล: " + (response.message || "ไม่พบข้อมูล"));
+            }
+
+            document.getElementById('loadingOverlay').classList.add('opacity-0');
+            setTimeout(() => { 
+                document.getElementById('loadingOverlay').classList.add('hidden'); 
+                document.getElementById('announcementPopup').classList.remove('hidden');
+            }, 300);
+        }
+
+        function closeAnnouncement() {
+            document.getElementById('announcementPopup').classList.add('hidden');
+        }
+
         function reloadDashboard() {
             document.getElementById('successPopup').classList.add('hidden');
             goToStep(1);
@@ -622,8 +633,8 @@
 
         function updateCardDashboard() {
             const total = allAssets.length;
-            const totalDomain = allAssets.filter(item => item.typeFilter && item.typeFilter.toLowerCase() === 'domain').length;
-            const totalServer = allAssets.filter(item => item.typeFilter && item.typeFilter.toLowerCase() !== 'domain').length;
+            const totalDomain = allAssets.filter(item => item.typeFilter.toLowerCase() === 'domain').length;
+            const totalServer = allAssets.filter(item => item.typeFilter.toLowerCase() !== 'domain').length;
 
             let activeCount = 0;
             let assessedCount = 0;
@@ -634,11 +645,14 @@
                 const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
                 if (isActive) {
                     activeCount++;
-                    if (row.querySelector('.pdpa-cb') && row.querySelector('.pdpa-cb').checked) pdpaCount++;
+                    const hasPdpa = row.querySelector('.pdpa-cb').checked;
+                    if (hasPdpa) pdpaCount++;
 
                     const id = row.getAttribute('data-id');
                     const assetData = allAssets.find(a => a.id.toString() === id.toString());
-                    if (assetData && assetData.isSaved) assessedCount++;
+                    if (assetData && assetData.isSaved) {
+                        assessedCount++;
+                    }
                 }
             });
 
@@ -666,19 +680,18 @@
             let count = 0;
 
             allAssets.forEach((item) => {
-                const isDomain = item.typeFilter && item.typeFilter.toLowerCase() === 'domain';
+                const isDomain = item.typeFilter.toLowerCase() === 'domain';
                 const badgeType = isDomain 
                     ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Domain</span>`
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
-                const currentStatus = item.status || (item.isSaved ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
-                const statusBadge = (currentStatus === 'ยืนยันใช้งาน')
-                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
+                const statusBadge = item.isSaved 
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fa-solid fa-check-circle mr-1"></i>ยืนยันใช้งาน</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-circle-xmark mr-1"></i>ไม่ใช้งาน</span>`;
 
-                const isChecked = (currentStatus === 'ยืนยันใช้งาน' || item.isSaved) ? 'checked' : '';
-                const rowDisabledClass = isChecked ? '' : 'row-disabled';
-                const fieldDisabled = isChecked ? '' : 'disabled';
+                const isChecked = item.isSaved ? 'checked' : '';
+                const rowDisabledClass = item.isSaved ? '' : 'row-disabled';
+                const fieldDisabled = item.isSaved ? '' : 'disabled';
 
                 const rowHtml = `
                     <tr class="asset-row ${rowDisabledClass} hover:bg-slate-50 transition" data-id="${item.id}" data-type="${item.typeFilter}">
@@ -692,15 +705,15 @@
                         <td class="py-2 px-2 text-slate-700 font-mono cell-ip border-r border-slate-100">${item.ip || item.privateIp || '-'}</td>
                         <td class="py-2 px-2 text-slate-600 font-semibold cell-domain border-r border-slate-100">${item.domain || '-'}</td>
                         <td class="py-2 px-2 border-r border-slate-100">
-                            <input type="text" value="${item.name || ''}" ${fieldDisabled} class="name-input cell-name w-full px-2 py-1 border border-slate-300 rounded text-slate-800 font-semibold focus:ring-1 focus:ring-blue-500">
+                            <input type="text" value="${item.name}" ${fieldDisabled} class="name-input cell-name w-full px-2 py-1 border border-slate-300 rounded text-slate-800 font-semibold focus:ring-1 focus:ring-blue-500">
                         </td>
                         <td class="py-2 px-2 border-r border-slate-100">
                             <select ${fieldDisabled} class="type-select w-full px-1.5 py-1 border border-slate-300 rounded">
-                                <option value="ระบบบริการ (Web Services)" ${(item.sysType && item.sysType.includes('Web Services')) ? 'selected' : ''}>ระบบบริการ (Web Services)</option>
-                                <option value="ระบบประมวลผลและแลกเปลี่ยนข้อมูล (API)" ${(item.sysType && item.sysType.includes('API')) ? 'selected' : ''}>ระบบประมวลผลและแลกเปลี่ยนข้อมูล (API)</option>
-                                <option value="ระบบจัดเก็บและสำรองข้อมูล (Data Storage)" ${(item.sysType && item.sysType.includes('Storage')) ? 'selected' : ''}>ระบบจัดเก็บและสำรองข้อมูล (Data Storage)</option>
-                                <option value="ระบบข้อมูลสารสนเทศ (HIS)" ${(item.sysType && item.sysType.includes('HIS')) ? 'selected' : ''}>ระบบข้อมูลสารสนเทศ (HIS)</option>
-                                <option value="ระบบวิเคราะห์และสนับสนุนการบริหาร (Analytics & Support)" ${(item.sysType && item.sysType.includes('Analytics')) ? 'selected' : ''}>ระบบวิเคราะห์และสนับสนุนการบริหาร (Analytics & Support)</option>
+                                <option value="ระบบบริการ (Web Services)" ${item.sysType.includes('Web Services') ? 'selected' : ''}>ระบบบริการ (Web Services)</option>
+                                <option value="ระบบประมวลผลและแลกเปลี่ยนข้อมูล (API)" ${item.sysType.includes('API') ? 'selected' : ''}>ระบบประมวลผลและแลกเปลี่ยนข้อมูล (API)</option>
+                                <option value="ระบบจัดเก็บและสำรองข้อมูล (Data Storage)" ${item.sysType.includes('Storage') ? 'selected' : ''}>ระบบจัดเก็บและสำรองข้อมูล (Data Storage)</option>
+                                <option value="ระบบข้อมูลสารสนเทศ (HIS)" ${item.sysType.includes('HIS') ? 'selected' : ''}>ระบบข้อมูลสารสนเทศ (HIS)</option>
+                                <option value="ระบบวิเคราะห์และสนับสนุนการบริหาร (Analytics & Support)" ${item.sysType.includes('Analytics') ? 'selected' : ''}>ระบบวิเคราะห์และสนับสนุนการบริหาร (Analytics & Support)</option>
                             </select>
                         </td>
                         <td class="py-2 px-1 border-r border-slate-100">
@@ -717,7 +730,7 @@
                             <select ${fieldDisabled} onchange="updateImpact(this)" class="i-select px-1 py-1 border rounded w-full">
                                 <option value="1" ${item.i == 1 ? 'selected' : ''}>LOW: ข้อมูลคลาดเคลื่อนเล็กน้อย</option>
                                 <option value="2" ${item.i == 2 ? 'selected' : ''}>MEDIUM: ข้อมูลสำคัญถูกดัดแปลง</option>
-                                <option value="3" ${item.i == 3 ? 'selected' : ''}>HIGH: ข้อมูลหลักถูกลบหรือแก้ไข</option>
+                                <option value="3" ${item.i == 3 ? 'selected' : ''}>HIGH: ข้อมูลหลัก/ประวัติการรักษาถูกลบหรือแก้ไข</option>
                             </select>
                         </td>
                         <td class="py-2 px-1 border-r border-slate-100">
@@ -728,7 +741,7 @@
                             </select>
                         </td>
                         <td class="py-2 px-1 border-r border-slate-100">
-                            <span class="impact-badge inline-flex items-center justify-center w-6 h-6 rounded-full font-bold bg-amber-400">${item.impact || 1}</span>
+                            <span class="impact-badge inline-flex items-center justify-center w-6 h-6 rounded-full font-bold bg-amber-400">${item.impact}</span>
                         </td>
                         <td class="py-2 px-2">
                             <input type="text" ${fieldDisabled} value="${item.note || ''}" placeholder="ระบุเพิ่ม" class="note-input w-full px-2 py-1 border border-slate-300 rounded">
@@ -739,7 +752,13 @@
 
             if(count === 0) tbody.innerHTML = '<tr><td colspan="15" class="py-6 text-slate-400">ไม่พบข้อมูลระบบของหน่วยงานนี้</td></tr>';
             
-            document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
+            const allCbs = Array.from(document.querySelectorAll('#mainTableBody .active-cb'));
+            const masterCb = document.getElementById('selectAllCb');
+            if(allCbs.length > 0) {
+                masterCb.checked = allCbs.every(c => c.checked);
+            }
+
+            document.querySelectorAll('tbody tr').forEach(row => {
                 if(row.querySelector('.pdpa-cb')) updateImpact(row.querySelector('.pdpa-cb'), false);
             });
         }
@@ -747,6 +766,7 @@
         function sortTable(column) {
             const tbody = document.getElementById('mainTableBody');
             const rows = Array.from(tbody.querySelectorAll('.asset-row'));
+            
             sortDirection[column] = !sortDirection[column];
             const asc = sortDirection[column];
 
@@ -756,7 +776,10 @@
                 if(column === 'ip') { valA = a.querySelector('.cell-ip').innerText; valB = b.querySelector('.cell-ip').innerText; }
                 if(column === 'domain') { valA = a.querySelector('.cell-domain').innerText; valB = b.querySelector('.cell-domain').innerText; }
                 if(column === 'name') { valA = a.querySelector('.cell-name').value; valB = b.querySelector('.cell-name').value; }
-                if(column === 'impact') { valA = parseInt(a.querySelector('.impact-badge').innerText); valB = parseInt(b.querySelector('.impact-badge').innerText); }
+                if(column === 'impact') { 
+                    valA = parseInt(a.querySelector('.impact-badge').innerText); 
+                    valB = parseInt(b.querySelector('.impact-badge').innerText); 
+                }
 
                 if (valA < valB) return asc ? -1 : 1;
                 if (valA > valB) return asc ? 1 : -1;
@@ -789,6 +812,12 @@
                 elements.forEach(el => el.disabled = true);
             }
 
+            const allCbs = Array.from(document.querySelectorAll('#mainTableBody .active-cb'));
+            const masterCb = document.getElementById('selectAllCb');
+            if(allCbs.length > 0) {
+                masterCb.checked = allCbs.every(c => c.checked);
+            }
+            
             if(shouldUpdateDash) updateCardDashboard();
         }
 
@@ -859,8 +888,12 @@
             document.getElementById('step2').classList.add('hidden');
             document.getElementById(`step${step}`).classList.remove('hidden');
 
-            if(step === 1) applyFilterAndPagination(true);
-            if(step === 2) prepareSummaryData();
+            if(step === 1) {
+                applyFilterAndPagination(true);
+            }
+            if(step === 2) {
+                prepareSummaryData();
+            }
         }
 
         function prepareSummaryData() {
@@ -936,6 +969,7 @@
         function renderSummaryTable() {
             const summaryBody = document.getElementById('summaryTableBody');
             summaryBody.innerHTML = '';
+
             const totalFiltered = filteredSummaryDataList.length;
 
             if (totalFiltered === 0) {
@@ -945,6 +979,7 @@
             }
 
             document.getElementById('summaryPaginationControls').style.display = 'flex';
+
             const limit = summaryPageSize === 'all' ? totalFiltered : parseInt(summaryPageSize);
             const totalPages = summaryPageSize === 'all' ? 1 : Math.ceil(totalFiltered / limit) || 1;
 
@@ -953,9 +988,11 @@
 
             const startIndex = (summaryCurrentPage - 1) * limit;
             const endIndex = summaryPageSize === 'all' ? totalFiltered : startIndex + limit;
+
             const currentData = filteredSummaryDataList.slice(startIndex, endIndex);
 
             let count = startIndex;
+
             currentData.forEach(data => {
                 count++;
                 const isDomain = data.typeFilter.toLowerCase() === 'domain';
@@ -963,7 +1000,9 @@
                     ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700">Domain</span>`
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
-                const statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`;
+                const statusBadge = data.isSaved 
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
 
                 summaryBody.insertAdjacentHTML('beforeend', `
                     <tr class="hover:bg-slate-50 transition">
@@ -996,8 +1035,14 @@
             }
         }
 
-        function changeSummaryPageSize() { summaryPageSize = document.getElementById('summaryPageSizeSelect').value; applySummaryFilterAndPagination(true); }
-        function changeSummaryPage(direction) { summaryCurrentPage += direction; renderSummaryTable(); }
+        function changeSummaryPageSize() { 
+            summaryPageSize = document.getElementById('summaryPageSizeSelect').value; 
+            applySummaryFilterAndPagination(true); 
+        }
+        function changeSummaryPage(direction) { 
+            summaryCurrentPage += direction; 
+            renderSummaryTable(); 
+        }
 
         function exportToExcel() {
             const excelData = [];
@@ -1021,7 +1066,6 @@
                         'Integrity (I)': row.querySelector('.i-select').value,
                         'Availability (A)': row.querySelector('.a-select').value,
                         'ระดับผลกระทบรวม': parseInt(row.querySelector('.impact-badge').textContent),
-                        'สถานะ': 'ยืนยันใช้งาน',
                         'หมายเหตุ': row.querySelector('.note-input').value || '-'
                     });
                 }
@@ -1038,12 +1082,13 @@
             XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
+        // 3. ปรับการบันทึกข้อมูลผ่าน fetch
         async function submitToDatabase() {
             const payloadData = [];
             document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
                 const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
                 const id = row.getAttribute('data-id');
-                if(id) {
+                if(id && isActive) {
                     payloadData.push({
                         id: id,
                         resourceName: row.querySelector('.name-input').value,
@@ -1053,8 +1098,7 @@
                         c: row.querySelector('.c-select').value,
                         i: row.querySelector('.i-select').value,
                         a: row.querySelector('.a-select').value,
-                        impact: parseInt(row.querySelector('.impact-badge').textContent),
-                        status: isActive ? "ยืนยันใช้งาน" : "ไม่ใช้งาน"
+                        impact: parseInt(row.querySelector('.impact-badge').textContent)
                     });
                 }
             });
@@ -1070,13 +1114,13 @@
 
             const res = await callBackend("saveAssessmentData", { agency: userAgency, assessor: userName, assets: payloadData });
 
-            if(res && res.success) {
+            if(res.success) {
                 document.getElementById('successPopup').classList.remove('hidden');
             } else {
-                alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
+                alert("เกิดข้อผิดพลาด: " + res.message);
+                btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
+                btn.disabled = false;
             }
-            btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
-            btn.disabled = false;
         }
     </script>
 </body>
