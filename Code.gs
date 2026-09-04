@@ -504,7 +504,7 @@ function getAllRiskCloudData() {
     return [];
   }
 }
-// 🟢 1. วางทับฟังก์ชันเดิมในไฟล์ Code.gs
+
 function saveAssessmentData(payload) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -519,21 +519,12 @@ function saveAssessmentData(payload) {
     const fullRange = sheet.getDataRange();
     const data = fullRange.getValues();
     
-    // 🟢 เตรียมคอลัมน์ให้ครบ 18 คอลัมน์ (เผื่อไว้ใส่ Timestamp ในคอลัมน์ที่ 18 หรือ R)
-    for(let i = 0; i < data.length; i++) {
-      while(data[i].length < 18) {
-        data[i].push('');
-      }
-    }
-    data[0][17] = "Timestamp"; // ตั้งชื่อหัวตาราง
-    
     const updates = new Map();
     payload.assets.forEach(asset => {
       if (asset.id) updates.set(asset.id.toString(), asset);
     });
 
     let isModified = false;
-    const timestamp = new Date(); // 🟢 สร้างเวลาปัจจุบัน
 
     for (let i = 1; i < data.length; i++) {
       const rowId = data[i][0] ? data[i][0].toString() : null;
@@ -551,15 +542,13 @@ function saveAssessmentData(payload) {
         data[i][14] = parseInt(update.a) || 1;               
         data[i][15] = parseInt(update.impact) || 1;          
         data[i][16] = (update.status && update.status.toString().trim() !== '') ? update.status.toString().trim() : 'ไม่ใช้งาน'; 
-        data[i][17] = timestamp; // 🟢 บันทึกเวลาลงในฐานข้อมูล
         
         isModified = true;
       }
     }
 
     if (isModified) {
-      // เขียนข้อมูลทั้งหมดกลับลงชีต
-      sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+      fullRange.setValues(data);
     }
     
     CacheService.getScriptCache().remove("all_risk_cloud_data");
