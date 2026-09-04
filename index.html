@@ -983,10 +983,13 @@
     const allRows = document.querySelectorAll('#mainTableBody tr.asset-row');
     
     allRows.forEach(row => {
-        const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
+        const statusSelect = row.querySelector('.status-select');
+        const currentStatus = statusSelect 
+            ? statusSelect.value 
+            : (row.querySelector('.active-cb')?.checked ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
         
-        // 🟢 ดึงไปแสดงในหน้าสรุปเฉพาะรายการที่ติ๊ก "ยืนยันใช้งาน" เท่านั้น
-        if (isActive) {
+        // 🟢 แสดงเฉพาะรายการที่เลือก "ยืนยันใช้งาน"
+        if (currentStatus === 'ยืนยันใช้งาน') {
             const id = row.getAttribute('data-id');
             const asset = allAssets.find(a => a.id.toString() === id.toString());
             if (asset) {
@@ -1005,7 +1008,8 @@
                     c: row.querySelector('.c-select').value,
                     i: row.querySelector('.i-select').value,
                     a: row.querySelector('.a-select').value,
-                    impact: row.querySelector('.impact-badge').textContent
+                    impact: row.querySelector('.impact-badge').textContent,
+                    status: currentStatus
                 });
             }
         }
@@ -1013,7 +1017,6 @@
 
     applySummaryFilterAndPagination(true);
 }
-
         function applySummaryFilterAndPagination(resetPage = false) {
             if (resetPage) summaryCurrentPage = 1;
             const searchValue = document.getElementById('summarySearchInput').value.toLowerCase().trim();
@@ -1116,53 +1119,63 @@
         function changeSummaryPageSize() { summaryPageSize = document.getElementById('summaryPageSizeSelect').value; applySummaryFilterAndPagination(true); }
         function changeSummaryPage(direction) { summaryCurrentPage += direction; renderSummaryTable(); }
 
-        function exportToExcel() {
-            const excelData = [];
-            document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
-                const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-                if(!isActive) return;
+        // 🟢 2. วางทับฟังก์ชันเดิมในไฟล์ index.html
+function exportToExcel() {
+    const excelData = [];
+    const nowStr = new Date().toLocaleString('th-TH'); // 🟢 เพิ่มตัวแปรเวลาปัจจุบันแบบไทย
 
-                const id = row.getAttribute('data-id');
-                if(!id) return;
-                const asset = allAssets.find(a => a.id.toString() === id.toString());
-                if(asset) {
-                    excelData.push({
-                        'หน่วยงาน': userAgency,
-                        'Type': asset.typeFilter,
-                        'IP Address': asset.ip || asset.privateIp || '-',
-                        'Domain Name': asset.domain || '-',
-                        'Resource_Name': row.querySelector('.name-input').value,
-                        'ประเภทระบบ': row.querySelector('.type-select').value,
-                        'PDPA': row.querySelector('.pdpa-cb').checked ? 'ใช่' : 'ไม่ใช่',
-                        'Confidentiality (C)': row.querySelector('.c-select').value,
-                        'Integrity (I)': row.querySelector('.i-select').value,
-                        'Availability (A)': row.querySelector('.a-select').value,
-                        'ระดับผลกระทบรวม': parseInt(row.querySelector('.impact-badge').textContent),
-                        'สถานะ': 'ยืนยันใช้งาน',
-                        'หมายเหตุ': row.querySelector('.note-input').value || '-'
-                    });
-                }
-            });
-
-            if(excelData.length === 0) {
-                alert("ไม่มีระบบถูกเลือกใช้งาน ไม่สามารถส่งออกไฟล์ได้");
-                return;
-            }
-
-            const ws = XLSX.utils.json_to_sheet(excelData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Risk_Assessment");
-            XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
-        }
-
-        async function submitToDatabase() {
-    const payloadData = [];
     document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
         const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
+        if(!isActive) return;
+
         const id = row.getAttribute('data-id');
+        if(!id) return;
+        const asset = allAssets.find(a => a.id.toString() === id.toString());
+        if(asset) {
+            excelData.push({
+                'หน่วยงาน': userAgency,
+                'Type': asset.typeFilter,
+                'IP Address': asset.ip || asset.privateIp || '-',
+                'Domain Name': asset.domain || '-',
+                'Resource_Name': row.querySelector('.name-input').value,
+                'ประเภทระบบ': row.querySelector('.type-select').value,
+                'PDPA': row.querySelector('.pdpa-cb').checked ? 'ใช่' : 'ไม่ใช่',
+                'Confidentiality (C)': row.querySelector('.c-select').value,
+                'Integrity (I)': row.querySelector('.i-select').value,
+                'Availability (A)': row.querySelector('.a-select').value,
+                'ระดับผลกระทบรวม': parseInt(row.querySelector('.impact-badge').textContent),
+                'สถานะ': 'ยืนยันใช้งาน',
+                'หมายเหตุ': row.querySelector('.note-input').value || '-',
+                'Timestamp': nowStr // 🟢 เพิ่มคอลัมน์เก็บเวลาท้ายสุดในไฟล์ Excel
+            });
+        }
+    });
+
+    if(excelData.length === 0) {
+        alert("ไม่มีระบบถูกเลือกใช้งาน ไม่สามารถส่งออกไฟล์ได้");
+        return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Risk_Assessment");
+    XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+async function submitToDatabase() {
+    const payloadData = [];
+    
+    // ดึงข้อมูลจากทุกแถวในตาราง
+    document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
+        const id = row.getAttribute('data-id');
+        const statusSelect = row.querySelector('.status-select');
         
-        // 🟢 ปรับเงื่อนไข: บันทึกเฉพาะแถวที่มี ID และถูกกด "ยืนยันใช้งาน (isActive === true)" เท่านั้น
-        if (id && isActive) {
+        // 🟢 ดึงค่าจาก Dropdown สถานะโดยตรง
+        const currentStatus = statusSelect 
+            ? statusSelect.value 
+            : (row.querySelector('.active-cb')?.checked ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
+        
+        if (id) {
             payloadData.push({
                 id: id,
                 resourceName: row.querySelector('.name-input').value,
@@ -1173,13 +1186,13 @@
                 i: row.querySelector('.i-select').value,
                 a: row.querySelector('.a-select').value,
                 impact: parseInt(row.querySelector('.impact-badge').textContent),
-                status: "ยืนยันใช้งาน"
+                status: currentStatus // 🟢 บันทึกสถานะตามที่เลือกจาก Dropdown จริง
             });
         }
     });
 
     if (payloadData.length === 0) {
-        alert("โปรดเลือกอย่างน้อย 1 รายการที่ต้องการยืนยันใช้งานเพื่อบันทึก");
+        alert("ไม่พบรายการที่ต้องการบันทึก");
         return;
     }
 
