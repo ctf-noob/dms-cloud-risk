@@ -9,7 +9,7 @@ const SSO_CONFIG = {
   profileUrl: "https://sso.dms.go.th/dms-sso-api/api/Authen/Verify/Profile",
   
   // 🟢 ดึงค่าจากตัวแปรที่ซ่อนไว้ (ไม่ฮาร์ดโค้ดในนี้แล้ว)
-  clientId: scriptProps.getProperty("CLIENT_ID") || "dmscloudmanagement",
+  clientId: scriptProps.getProperty("CLIENT_ID"),
   clientSecret: scriptProps.getProperty("CLIENT_SECRET"), 
   
   redirectUri: "https://cloud.dms.go.th/sso-callback.html"
@@ -141,7 +141,9 @@ function handleSsoCallback(code) {
     if (profileData && profileData.data && profileData.data.userSsoInfo) {
       const p = profileData.data.userSsoInfo;
       
-      const isThai = (str) => /[\u0E00-\u0E7F]/.test(str);
+      // 🟢 ฟังก์ชันเช็กตัวอักษรเพื่อแยก ไทย/อังกฤษ ชัดเจน
+      const isThai = (str) => /[\u0E00-\u0E7F]/.test(str || '');
+      const isEng = (str) => /[a-zA-Z]/.test(str || '') && !isThai(str);
 
       const possibleFirsts = [p.firstNameTh, p.thFirstName, p.nameTh, p.firstName, p.firstname, p.givenName, p.given_name, p.firstNameEn, p.enFirstName, p.name];
       const possibleLasts = [p.lastNameTh, p.thLastName, p.surnameTh, p.lastName, p.lastname, p.familyName, p.family_name, p.surname, p.lastNameEn, p.enLastName];
@@ -149,23 +151,19 @@ function handleSsoCallback(code) {
       const pFirsts = possibleFirsts.filter(Boolean).map(s => s.toString().trim());
       const pLasts = possibleLasts.filter(Boolean).map(s => s.toString().trim());
 
+      // แยกภาษาไทย-อังกฤษ อย่างแม่นยำ
       const thFirst = pFirsts.find(isThai) || '';
       const thLast = pLasts.find(isThai) || '';
-      const enFirst = pFirsts.find(s => !isThai(s)) || '';
-      const enLast = pLasts.find(s => !isThai(s)) || '';
+      const enFirst = pFirsts.find(isEng) || '';
+      const enLast = pLasts.find(isEng) || '';
 
+      // ประกอบร่างชื่อ-สกุล เป็นภาษาไทยให้แสดงผลที่เว็บ (หากไม่มีใช้ภาษาอังกฤษแทน)
       let fullname = "";
-      if (thFirst && thLast) {
-        fullname = thFirst + " " + thLast;
-      } else if (thFirst) {
-        fullname = thFirst;
-      } else if (enFirst && enLast) {
-        fullname = enFirst + " " + enLast;
-      } else {
-        fullname = p.username || "ผู้ใช้งาน DMS SSO";
-      }
+      if (thFirst && thLast) fullname = thFirst + " " + thLast;
+      else if (thFirst) fullname = thFirst;
+      else if (enFirst && enLast) fullname = enFirst + " " + enLast;
+      else fullname = p.username || "ผู้ใช้งาน DMS SSO";
 
-      // ❌ ลบการดึงข้อมูล CID ออกทั้งหมด
       const ssoProfile = {
         username: p.username || p.userName || p.preferred_username || '',
         title: p.titleName || p.title || p.ttl || p.prefix || '',
@@ -173,18 +171,20 @@ function handleSsoCallback(code) {
         thLastName: thLast,
         enFirstName: enFirst,
         enLastName: enLast,
-        email: p.email || p.mail || '', 
+        email: p.email || p.mail || p.cid || '',
         phone: p.mobile || p.phoneNumber || p.telephone || '',
+        cid: p.cid || p.citizenId || p.personalId || '',
         position: p.position || p.positionName || p.jobTitle || '',
-        fullname: fullname 
+        fullname: fullname
       };
 
+      // ส่งไปบันทึกลง UserDB และ Log
       const dbUser = saveSsoUserToSheet(ssoProfile);
 
       return {
         success: true,
         user: {
-          cid: "", // ส่งค่าว่างไปให้หน้าเว็บเพื่อไม่ให้เกิด Error
+          cid: ssoProfile.cid,
           fullname: dbUser.fullname,
           email: ssoProfile.email,
           agency: dbUser.agency 
@@ -199,11 +199,10 @@ function handleSsoCallback(code) {
   }
 }
 
-// 🟢 ฟังก์ชันบันทึกและจับคู่ข้อมูล (เวอร์ชันไม่มี CID)
+// 🟢 ฟังก์ชันบันทึกและจับคู่ข้อมูล (อัปเดตให้บันทึกข้อมูลครบถ้วนลง UserDB)
 function saveSsoUserToSheet(profile) {
   let mappedAgency = "เข้าสู่ระบบครั้งแรก (SSO)"; 
   let mappedFullname = profile.fullname;
-  let dbPhone = "";
 
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -211,56 +210,55 @@ function saveSsoUserToSheet(profile) {
     
     if (!sheet) {
       sheet = ss.insertSheet('UserDB');
-      sheet.appendRow(['Agency', 'Email', 'Phone', 'FullName', 'LastLogin', 'IsActive']);
+      sheet.appendRow(['Agency', 'Email', 'Phone/CID', 'FullName', 'LastLogin', 'IsActive', 'Username', 'Title', 'ThFirstName', 'ThLastName', 'EnFirstName', 'EnLastName', 'CID', 'Position']);
     }
 
     const data = sheet.getDataRange().getValues();
     let userFound = false;
     let rowIndex = -1;
 
-    // 📍 ค้นหาและจับคู่ด้วย "อีเมล" เพียงอย่างเดียว (เพราะไม่มี CID แล้ว)
     for (let i = 1; i < data.length; i++) {
       const dbEmail = data[i][1] ? data[i][1].toString().trim() : '';
+      const dbPhoneCid = data[i][2] ? data[i][2].toString().replace(/^'/, '').trim() : '';
 
-      if (profile.email && dbEmail === profile.email) {
+      if ((profile.email && dbEmail === profile.email) || (profile.cid && dbPhoneCid === profile.cid.toString())) {
         userFound = true;
         rowIndex = i + 1;
         
         mappedAgency = data[i][0] ? data[i][0].toString() : mappedAgency;
-        mappedFullname = profile.fullname;
-        dbPhone = data[i][2] ? data[i][2].toString().replace(/^'/, '').trim() : '';
+        mappedFullname = profile.fullname; // อัปเดตชื่อเป็นแบบล่าสุด
         break;
       }
     }
 
-    // รวมเบอร์โทร
-    const finalPhone = profile.phone || dbPhone || "";
-
     if (userFound) {
-      sheet.getRange(rowIndex, 3).setValue("'" + finalPhone); // บันทึกเฉพาะเบอร์
+      // 📍 อัปเดตข้อมูลของผู้ใช้เดิม ลงใน UserDB
+      sheet.getRange(rowIndex, 3).setValue("'" + profile.cid);
       sheet.getRange(rowIndex, 4).setValue(mappedFullname); 
       sheet.getRange(rowIndex, 5).setValue(new Date()); 
       sheet.getRange(rowIndex, 6).setValue(true); 
+      sheet.getRange(rowIndex, 7).setValue(profile.username);
+      sheet.getRange(rowIndex, 8).setValue(profile.title);
+      sheet.getRange(rowIndex, 9).setValue(profile.thFirstName);
+      sheet.getRange(rowIndex, 10).setValue(profile.thLastName);
+      sheet.getRange(rowIndex, 11).setValue(profile.enFirstName);
+      sheet.getRange(rowIndex, 12).setValue(profile.enLastName);
+      sheet.getRange(rowIndex, 13).setValue("'" + profile.cid);
+      sheet.getRange(rowIndex, 14).setValue(profile.position);
     } else {
-      sheet.appendRow([mappedAgency, profile.email, "'" + finalPhone, profile.fullname, new Date(), true]);
+      // 📍 สร้างผู้ใช้ใหม่ พร้อมข้อมูลครบถ้วน ลงใน UserDB
+      sheet.appendRow([
+        mappedAgency, profile.email, "'" + profile.cid, profile.fullname, new Date(), true,
+        profile.username, profile.title, profile.thFirstName, profile.thLastName, profile.enFirstName, profile.enLastName, "'" + profile.cid, profile.position
+      ]);
     }
 
-    // 📍 บันทึกลง Log โดยไม่มี CID มาแทรก
+    // 📍 บันทึกลง Log ด้วยเช่นกัน
     const logSheet = ss.getSheetByName('Log');
     if (logSheet) {
       logSheet.appendRow([
-        new Date(),                       // คอลัมน์ A: Timestamp
-        mappedAgency,                     // คอลัมน์ B: agency
-        profile.email,                    // คอลัมน์ C: email
-        "'" + finalPhone,                 // คอลัมน์ D: phone (เฉพาะเบอร์โทร)
-        "SUCCESS (SSO Login)",            // คอลัมน์ E: note (สถานะ)
-        profile.username,                 // คอลัมน์ F: ชื่อผู้ใช้งาน
-        profile.title,                    // คอลัมน์ G: คำนำหน้านาม
-        profile.thFirstName,              // คอลัมน์ H: ชื่อ ภาษาไทย 
-        profile.thLastName,               // คอลัมน์ I: นามสกุล ภาษาไทย 
-        profile.enFirstName,              // คอลัมน์ J: ชื่อ ภาษาอังกฤษ
-        profile.enLastName,               // คอลัมน์ K: นามสกุล ภาษาอังกฤษ
-        profile.position                  // คอลัมน์ L: ตำแหน่ง (แทนที่ CID เก่า)
+        new Date(), mappedAgency, profile.email, profile.phone || profile.cid, "SUCCESS (SSO Login)",
+        profile.username, profile.title, profile.thFirstName, profile.thLastName, profile.enFirstName, profile.enLastName, "'" + profile.cid, profile.position
       ]);
     }
 
