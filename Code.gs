@@ -542,7 +542,7 @@ function saveAssessmentData(payload) {
         data[i][14] = parseInt(update.a) || 1;               
         data[i][15] = parseInt(update.impact) || 1;          
         data[i][16] = (update.status && update.status.toString().trim() !== '') ? update.status.toString().trim() : 'ไม่ใช้งาน'; 
-        data[i][17] = new Date();
+        
         isModified = true;
       }
     }
