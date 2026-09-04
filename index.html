@@ -978,41 +978,48 @@
             if(step === 2) prepareSummaryData();
         }
 
+        // 🟢 แก้ไข 1: ดึงเฉพาะรายการที่สถานะเป็น "ยืนยันใช้งาน" ตาม Dropdown
         function prepareSummaryData() {
-    summaryDataList = [];
-    const allRows = document.querySelectorAll('#mainTableBody tr.asset-row');
-    
-    allRows.forEach(row => {
-        const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-        
-        // 🟢 ดึงไปแสดงในหน้าสรุปเฉพาะรายการที่ติ๊ก "ยืนยันใช้งาน" เท่านั้น
-        if (isActive) {
-            const id = row.getAttribute('data-id');
-            const asset = allAssets.find(a => a.id.toString() === id.toString());
-            if (asset) {
-                summaryDataList.push({
-                    id: asset.id,
-                    isSaved: asset.isSaved,
-                    contact: asset.contact,
-                    ip: asset.ip,
-                    privateIp: asset.privateIp,
-                    domain: asset.domain,
-                    typeFilter: asset.typeFilter,
-                    nameVal: row.querySelector('.name-input').value,
-                    typeVal: row.querySelector('.type-select').value,
-                    noteVal: row.querySelector('.note-input').value,
-                    hasPdpa: row.querySelector('.pdpa-cb').checked,
-                    c: row.querySelector('.c-select').value,
-                    i: row.querySelector('.i-select').value,
-                    a: row.querySelector('.a-select').value,
-                    impact: row.querySelector('.impact-badge').textContent
-                });
-            }
-        }
-    });
+            summaryDataList = [];
+            const allRows = document.querySelectorAll('#mainTableBody tr.asset-row');
+            
+            allRows.forEach(row => {
+                const statusSelect = row.querySelector('.status-select');
+                
+                // อ่านค่าจาก Dropdown โดยตรง
+                const currentStatus = statusSelect 
+                    ? statusSelect.value 
+                    : (row.querySelector('.active-cb')?.checked ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
+                
+                // 🟢 ดึงไปแสดงในหน้าสรุปเฉพาะรายการที่สถานะเป็น "ยืนยันใช้งาน"
+                if (currentStatus === 'ยืนยันใช้งาน') {
+                    const id = row.getAttribute('data-id');
+                    const asset = allAssets.find(a => a.id.toString() === id.toString());
+                    if (asset) {
+                        summaryDataList.push({
+                            id: asset.id,
+                            isSaved: asset.isSaved,
+                            contact: asset.contact,
+                            ip: asset.ip,
+                            privateIp: asset.privateIp,
+                            domain: asset.domain,
+                            typeFilter: asset.typeFilter,
+                            nameVal: row.querySelector('.name-input').value,
+                            typeVal: row.querySelector('.type-select').value,
+                            noteVal: row.querySelector('.note-input').value,
+                            hasPdpa: row.querySelector('.pdpa-cb').checked,
+                            c: row.querySelector('.c-select').value,
+                            i: row.querySelector('.i-select').value,
+                            a: row.querySelector('.a-select').value,
+                            impact: row.querySelector('.impact-badge').textContent,
+                            status: currentStatus
+                        });
+                    }
+                }
+            });
 
-    applySummaryFilterAndPagination(true);
-}
+            applySummaryFilterAndPagination(true);
+        }
 
         function applySummaryFilterAndPagination(resetPage = false) {
             if (resetPage) summaryCurrentPage = 1;
@@ -1155,48 +1162,55 @@
             XLSX.writeFile(wb, `Risk_Assessment_${userAgency}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
+        // 🟢 แก้ไข 2: ส่งข้อมูลอัปเดตสถานะ "ทุกแถว" ไปยังฐานข้อมูล
         async function submitToDatabase() {
-    const payloadData = [];
-    document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
-        const isActive = row.querySelector('.active-cb') ? row.querySelector('.active-cb').checked : false;
-        const id = row.getAttribute('data-id');
-        
-        // 🟢 ปรับเงื่อนไข: บันทึกเฉพาะแถวที่มี ID และถูกกด "ยืนยันใช้งาน (isActive === true)" เท่านั้น
-        if (id && isActive) {
-            payloadData.push({
-                id: id,
-                resourceName: row.querySelector('.name-input').value,
-                sysType: row.querySelector('.type-select').value,
-                note: row.querySelector('.note-input').value,
-                pdpa: row.querySelector('.pdpa-cb').checked,
-                c: row.querySelector('.c-select').value,
-                i: row.querySelector('.i-select').value,
-                a: row.querySelector('.a-select').value,
-                impact: parseInt(row.querySelector('.impact-badge').textContent),
-                status: "ยืนยันใช้งาน"
+            const payloadData = [];
+            
+            document.querySelectorAll('#mainTableBody tr.asset-row').forEach(row => {
+                const id = row.getAttribute('data-id');
+                const statusSelect = row.querySelector('.status-select');
+                
+                // อ่านค่าจาก Dropdown โดยตรง
+                const currentStatus = statusSelect 
+                    ? statusSelect.value 
+                    : (row.querySelector('.active-cb')?.checked ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
+                
+                // 🟢 ดึงข้อมูลทุกแถวที่มี ID เพื่อให้มันเซฟค่า "ไม่ใช้งาน" กลับไปอัปเดตด้วย
+                if (id) {
+                    payloadData.push({
+                        id: id,
+                        resourceName: row.querySelector('.name-input').value,
+                        sysType: row.querySelector('.type-select').value,
+                        note: row.querySelector('.note-input').value,
+                        pdpa: row.querySelector('.pdpa-cb').checked,
+                        c: row.querySelector('.c-select').value,
+                        i: row.querySelector('.i-select').value,
+                        a: row.querySelector('.a-select').value,
+                        impact: parseInt(row.querySelector('.impact-badge').textContent),
+                        status: currentStatus // ส่งค่าสถานะตาม Dropdown (ไม่ใช่การฮาร์ดโค้ด)
+                    });
+                }
             });
+
+            if (payloadData.length === 0) {
+                alert("ไม่พบรายการที่ต้องการบันทึก");
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveFinal');
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
+            btn.disabled = true;
+
+            const res = await callBackend("saveAssessmentData", { agency: userAgency, assessor: userName, assets: payloadData });
+
+            if (res && res.success) {
+                document.getElementById('successPopup').classList.remove('hidden');
+            } else {
+                alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
+            }
+            btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
+            btn.disabled = false;
         }
-    });
-
-    if (payloadData.length === 0) {
-        alert("โปรดเลือกอย่างน้อย 1 รายการที่ต้องการยืนยันใช้งานเพื่อบันทึก");
-        return;
-    }
-
-    const btn = document.getElementById('btnSaveFinal');
-    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i> กำลังบันทึก...';
-    btn.disabled = true;
-
-    const res = await callBackend("saveAssessmentData", { agency: userAgency, assessor: userName, assets: payloadData });
-
-    if (res && res.success) {
-        document.getElementById('successPopup').classList.remove('hidden');
-    } else {
-        alert("เกิดข้อผิดพลาดในการบันทึก: " + (res.message || "ไม่ทราบสาเหตุ"));
-    }
-    btn.innerHTML = '<i class="fa-solid fa-save mr-1"></i> ยืนยันบันทึกข้อมูล';
-    btn.disabled = false;
-}
     </script>
 </body>
 </html>
