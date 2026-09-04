@@ -748,9 +748,16 @@
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Server</span>`;
 
                 const currentStatus = item.status || (item.isSaved ? 'ยืนยันใช้งาน' : 'ไม่ใช้งาน');
-                const statusBadge = (currentStatus === 'ยืนยันใช้งาน')
-                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">ยืนยันใช้งาน</span>`
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">ไม่ใช้งาน</span>`;
+                const selectColorClass = (currentStatus === 'ยืนยันใช้งาน')
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-100 text-amber-800 border-amber-200';
+
+                const statusSelectHtml = `
+                    <select onchange="handleStatusChange(this)" class="status-select ${selectColorClass} px-1 py-0.5 rounded text-[10px] font-bold border focus:outline-none cursor-pointer">
+                        <option value="ยืนยันใช้งาน" class="bg-white text-slate-800" ${currentStatus === 'ยืนยันใช้งาน' ? 'selected' : ''}>ยืนยันใช้งาน</option>
+                        <option value="ไม่ใช้งาน" class="bg-white text-slate-800" ${currentStatus === 'ไม่ใช้งาน' ? 'selected' : ''}>ไม่ใช้งาน</option>
+                    </select>
+                `;
 
                 const isChecked = (currentStatus === 'ยืนยันใช้งาน' || item.isSaved) ? 'checked' : '';
                 const rowDisabledClass = isChecked ? '' : 'row-disabled';
@@ -762,7 +769,7 @@
                             <input type="checkbox" onchange="toggleRowActive(this)" class="active-cb w-4 h-4 text-emerald-600 rounded cursor-pointer" ${isChecked}>
                         </td>
                         <td class="py-2 px-1 text-slate-400 font-medium border-r border-slate-100">${++count}</td>
-                        <td class="py-2 px-1 border-r border-slate-100">${statusBadge}</td>
+                        <td class="py-2 px-1 border-r border-slate-100">${statusSelectHtml}</td>
                         <td class="py-2 px-2 text-slate-600 font-medium text-[11px] border-r border-slate-100">${item.contact || '-'}</td>
                         <td class="py-2 px-2 cell-type border-r border-slate-100">${badgeType}</td>
                         <td class="py-2 px-2 text-slate-700 font-mono cell-ip border-r border-slate-100">${item.ip || item.privateIp || '-'}</td>
@@ -821,7 +828,16 @@
             const masterCb = document.getElementById('selectAllCb');
             if (masterCb) masterCb.checked = false;
         }
+        function handleStatusChange(selectElement) {
+            const row = selectElement.closest('tr');
+            const cb = row.querySelector('.active-cb');
+            const isConfirmed = selectElement.value === 'ยืนยันใช้งาน';
 
+            if (cb && cb.checked !== isConfirmed) {
+                cb.checked = isConfirmed;
+                toggleRowActive(cb, true);
+            }
+        }
         function sortTable(column) {
             const tbody = document.getElementById('mainTableBody');
             const rows = Array.from(tbody.querySelectorAll('.asset-row'));
@@ -863,14 +879,29 @@
         function toggleRowActive(cb, shouldUpdateDash = true) {
             const row = cb.closest('tr');
             const isActive = cb.checked;
-            const elements = row.querySelectorAll('input:not(.active-cb), select');
+            
+            // 🟢 1. ยกเว้น .status-select เพื่อไม่ให้โดนสั่งปิดการใช้งาน (Disabled)
+            const elements = row.querySelectorAll('input:not(.active-cb), select:not(.status-select)');
+            const statusSelect = row.querySelector('.status-select');
 
             if (isActive) {
                 row.classList.remove('row-disabled');
                 elements.forEach(el => el.disabled = false);
+                
+                // 🟢 2. อัปเดตค่าและสี Dropdown เป็น "ยืนยันใช้งาน" (เขียว)
+                if (statusSelect) {
+                    statusSelect.value = 'ยืนยันใช้งาน';
+                    statusSelect.className = "status-select bg-emerald-100 text-emerald-800 border-emerald-200 px-1 py-0.5 rounded text-[10px] font-bold border focus:outline-none cursor-pointer";
+                }
             } else {
                 row.classList.add('row-disabled');
                 elements.forEach(el => el.disabled = true);
+                
+                // 🟢 3. อัปเดตค่าและสี Dropdown เป็น "ไม่ใช้งาน" (ส้ม)
+                if (statusSelect) {
+                    statusSelect.value = 'ไม่ใช้งาน';
+                    statusSelect.className = "status-select bg-amber-100 text-amber-800 border-amber-200 px-1 py-0.5 rounded text-[10px] font-bold border focus:outline-none cursor-pointer";
+                }
             }
 
             if(shouldUpdateDash) updateCardDashboard();
